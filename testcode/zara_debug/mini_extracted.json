@@ -1,0 +1,202 @@
+[
+  {
+    "source": "api_response",
+    "content": {
+      "brandImpl": "zara",
+      "id": 420001212,
+      "reference": "C05862068407017-V2025",
+      "type": "Product",
+      "kind": "Wear",
+      "brand": {
+        "brandId": 1,
+        "brandGroupId": 1,
+        "brandGroupCode": "zara"
+      },
+      "name": "Z1975 BELTED MINI DENIM SKIRT",
+      "price": 7590,
+      "bundleProducts": [],
+      "section": 1,
+      "sectionName": "WOMAN",
+      "familyName": "FALDA",
+      "subfamilyName": "B.FALDA PAQUET.",
+      "detail": {
+        "reference": "05862068-V2025",
+        "displayReference": "5862/068",
+        "colors": [
+          {
+            "id": "407",
+            "productId": 442553073,
+            "name": "Blue",
+            "stylingId": "17",
+            "xmedia": [
+              {
+                "allowedScreens": ["large", "small"],
+                "datatype": "xmedia",
+                "height": 3072,
+                "kind": "full",
+                "name": "05862068407-p",
+                "path": "/assets/public/e9c3/77f3/c810426e908b/531bcdc2798a/05862068407-p",
+                "set": 19,
+                "timestamp": "1740418119431",
+                "type": "image",
+                "width": 2049,
+                "extraInfo": {
+                  "assetId": "e9c377f3c810426e908b531bcdc2798a"
+                },
+                "url": "https://static.zara.net/assets/public/e9c3/77f3/c810426e908b/531bcdc2798a/05862068407-p/05862068407-p.jpg?ts=1740418119431&w={width}"
+              }
+            ],
+            "price": 7590,
+            "availability": "in_stock",
+            "reference": "C05862068407017-V2025",
+            "extraInfo": {
+              "highlightPrice": false
+            },
+            "tagTypes": []
+          }
+        ]
+      },
+      "seo": {
+        "keyword": "-z-1-9-7-5---b-e-l-t-e-d---m-i-n-i---d-e-n-i-m---s-k-i-r-t-",
+        "seoProductId": "05862068",
+        "discernProductId": 442553073
+      },
+      "availability": "in_stock",
+      "extraInfo": {
+        "highlightPrice": false,
+        "isAddToCartInGridDisabled": false
+      },
+      "colorInfo": {
+        "mainColorHexCode": "#3E3E43",
+        "numAdditionalColors": 0
+      },
+      "xmedia": [
+        {
+          "allowedScreens": ["large", "small"],
+          "datatype": "xmedia",
+          "height": 3072,
+          "kind": "full",
+          "name": "05862068407-p",
+          "path": "/assets/public/e9c3/77f3/c810426e908b/531bcdc2798a/05862068407-p",
+          "set": 19,
+          "timestamp": "1740418119431",
+          "type": "image",
+          "width": 2049,
+          "extraInfo": {
+            "assetId": "e9c377f3c810426e908b531bcdc2798a"
+          },
+          "url": "https://static.zara.net/assets/public/e9c3/77f3/c810426e908b/531bcdc2798a/05862068407-p/05862068407-p.jpg?ts=1740418119431&w={width}"
+        }
+      ]
+    },
+    "id": "442553073",
+    "position": 35,
+    "tagging": {
+      "click": "https://www.zara.com/itxrest/1/search/store/11728/tag/event/click?locale=en_GB&query=black+skirt&section=WOMAN&spellcheck=false&origin=default&totalHits=78&page=0&pageSize=36&position=35&productId=442553073&deviceType=desktop&deviceOS=Windows&deviceOSVersion=10&providerParams=dG9kby1hZGQtY2xpY2smc2Vzc2lvbj1udWxs&scope=default&provider=attraqt",
+      "add2cart": "https://www.zara.com/itxrest/1/search/store/11728/tag/event/add2cart?locale=en_GB&query=black+skirt&section=WOMAN&spellcheck=false&origin=default&totalHits=78&page=0&pageSize=36&position=35&productId=442553073&deviceType=desktop&deviceOS=Windows&deviceOSVersion=10&providerParams=dG9kby1hZGQtYWRkVG9DYXJ0JnNlc3Npb249bnVsbA==&scope=default&provider=attraqt",
+      "wishlist": "https://www.zara.com/itxrest/1/search/store/11728/tag/event/add2wishlist?locale=en_GB&query=black+skirt&section=WOMAN&spellcheck=false&origin=default&totalHits=78&page=0&pageSize=36&position=35&productId=442553073&deviceType=desktop&deviceOS=Windows&deviceOSVersion=10&providerParams=dG9kby1hZGQtd2lzaGxpc3Qmc2Vzc2lvbj1udWxs&scope=default&provider=attraqt",
+      "checkout": "https://www.zara.com/itxrest/1/search/store/11728/tag/event/checkout?locale=en_GB&query=black+skirt&section=WOMAN&spellcheck=false&origin=default&totalHits=78&page=0&pageSize=36&position=35&productId=442553073&deviceType=desktop&deviceOS=Windows&deviceOSVersion=10&providerParams=dG9kby1hZGQtY2hlY2tvdXQmc2Vzc2lvbj1udWxs&scope=default&provider=attraqt",
+      "conversion": "https://www.zara.com/itxrest/1/search/store/11728/tag/event/conversion?locale=en_GB&query=black+skirt&section=WOMAN&spellcheck=false&origin=default&totalHits=78&page=0&pageSize=36&position=35&productId=442553073&deviceType=desktop&deviceOS=Windows&deviceOSVersion=10&providerParams=dG9kby1hZGQtY29udmVyc2lvbiZzZXNzaW9uPW51bGw=&scope=default&provider=attraqt"
+    }
+  },
+  {
+    "source": "api_response",
+    "content": {
+      "brandImpl": "zara",
+      "id": 431686232,
+      "reference": "C02142024401000-V2025",
+      "type": "Product",
+      "kind": "Wear",
+      "brand": {
+        "brandId": 1,
+        "brandGroupId": 1,
+        "brandGroupCode": "zara"
+      },
+      "name": "KNIT MINI SKIRT",
+      "price": 5990,
+      "bundleProducts": [],
+      "section": 1,
+      "sectionName": "WOMAN",
+      "familyName": "FALDA",
+      "subfamilyName": "PUNTO FALDA",
+      "detail": {
+        "reference": "02142024-V2025",
+        "displayReference": "2142/024",
+        "colors": [
+          {
+            "id": "401",
+            "productId": 431691130,
+            "name": "Navy blue",
+            "stylingId": "0",
+            "xmedia": [
+              {
+                "allowedScreens": ["small", "large"],
+                "datatype": "xmedia",
+                "height": 3072,
+                "kind": "full",
+                "name": "02142024401-p",
+                "path": "/assets/public/597a/4909/cece48ac8d1f/81345cd9a5e7/02142024401-p",
+                "set": 2,
+                "timestamp": "1741947704417",
+                "type": "image",
+                "width": 2048,
+                "extraInfo": {
+                  "assetId": "597a4909cece48ac8d1f81345cd9a5e7"
+                },
+                "url": "https://static.zara.net/assets/public/597a/4909/cece48ac8d1f/81345cd9a5e7/02142024401-p/02142024401-p.jpg?ts=1741947704417&w={width}"
+              }
+            ],
+            "price": 5990,
+            "availability": "in_stock",
+            "reference": "C02142024401000-V2025",
+            "extraInfo": {
+              "highlightPrice": false
+            },
+            "tagTypes": []
+          }
+        ]
+      },
+      "seo": {
+        "keyword": "-k-n-i-t---m-i-n-i---s-k-i-r-t-",
+        "seoProductId": "02142024",
+        "discernProductId": 431691130
+      },
+      "availability": "in_stock",
+      "extraInfo": {
+        "highlightPrice": false,
+        "isAddToCartInGridDisabled": false
+      },
+      "colorInfo": {
+        "mainColorHexCode": "#191919",
+        "numAdditionalColors": 0
+      },
+      "xmedia": [
+        {
+          "allowedScreens": ["small", "large"],
+          "datatype": "xmedia",
+          "height": 3072,
+          "kind": "full",
+          "name": "02142024401-p",
+          "path": "/assets/public/597a/4909/cece48ac8d1f/81345cd9a5e7/02142024401-p",
+          "set": 2,
+          "timestamp": "1741947704417",
+          "type": "image",
+          "width": 2048,
+          "extraInfo": {
+            "assetId": "597a4909cece48ac8d1f81345cd9a5e7"
+          },
+          "url": "https://static.zara.net/assets/public/597a/4909/cece48ac8d1f/81345cd9a5e7/02142024401-p/02142024401-p.jpg?ts=1741947704417&w={width}"
+        }
+      ]
+    },
+    "id": "431691130",
+    "position": 36,
+    "tagging": {
+      "click": "https://www.zara.com/itxrest/1/search/store/11728/tag/event/click?locale=en_GB&query=black+skirt&section=WOMAN&spellcheck=false&origin=default&totalHits=78&page=0&pageSize=36&position=36&productId=431691130&deviceType=desktop&deviceOS=Windows&deviceOSVersion=10&providerParams=dG9kby1hZGQtY2xpY2smc2Vzc2lvbj1udWxs&scope=default&provider=attraqt",
+      "add2cart": "https://www.zara.com/itxrest/1/search/store/11728/tag/event/add2cart?locale=en_GB&query=black+skirt&section=WOMAN&spellcheck=false&origin=default&totalHits=78&page=0&pageSize=36&position=36&productId=431691130&deviceType=desktop&deviceOS=Windows&deviceOSVersion=10&providerParams=dG9kby1hZGQtYWRkVG9DYXJ0JnNlc3Npb249bnVsbA==&scope=default&provider=attraqt",
+      "wishlist": "https://www.zara.com/itxrest/1/search/store/11728/tag/event/add2wishlist?locale=en_GB&query=black+skirt&section=WOMAN&spellcheck=false&origin=default&totalHits=78&page=0&pageSize=36&position=36&productId=431691130&deviceType=desktop&deviceOS=Windows&deviceOSVersion=10&providerParams=dG9kby1hZGQtd2lzaGxpc3Qmc2Vzc2lvbj1udWxs&scope=default&provider=attraqt",
+      "checkout": "https://www.zara.com/itxrest/1/search/store/11728/tag/event/checkout?locale=en_GB&query=black+skirt&section=WOMAN&spellcheck=false&origin=default&totalHits=78&page=0&pageSize=36&position=36&productId=431691130&deviceType=desktop&deviceOS=Windows&deviceOSVersion=10&providerParams=dG9kby1hZGQtY2hlY2tvdXQmc2Vzc2lvbj1udWxs&scope=default&provider=attraqt",
+      "conversion": "https://www.zara.com/itxrest/1/search/store/11728/tag/event/conversion?locale=en_GB&query=black+skirt&section=WOMAN&spellcheck=false&origin=default&totalHits=78&page=0&pageSize=36&position=36&productId=431691130&deviceType=desktop&deviceOS=Windows&deviceOSVersion=10&providerParams=dG9kby1hZGQtY29udmVyc2lvbiZzZXNzaW9uPW51bGw=&scope=default&provider=attraqt"
+    }
+  }
+]
