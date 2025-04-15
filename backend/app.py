@@ -59,38 +59,100 @@ def generate_unique_filename(filename):
 
 # Function to encode the image in base64 (may be needed for other purposes)
 def encode_image(image_path):
+    """Encode an image file to base64 string"""
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
-# Function to analyze image and extract clothing attributes (dummy implementation)
 def analyze_clothing_image(image_path):
-    """
-    Dummy function that simulates analyzing an image to extract clothing attributes.
-    In a real implementation, this would call an AI service like ChatGPT with vision capabilities.
+    """Analyze clothing in an image using ChatGPT Vision API"""
+    # Get API key from environment variable
+    api_key = os.getenv('OPENAI_API_KEY')
+    print(api_key)
+    if not api_key:
+        return {"status": False, "error": "OpenAI API key not configured"}
     
-    Returns a JSON with clothing attributes.
-    """
-    logger.info(f"Analyzing image: {image_path}")
+    # Convert image to base64
+    print(image_path)
+    base64_image = encode_image(image_path)
     
-    # In a real implementation, you would:
-    # 1. Convert the image to base64
-    # 2. Send it to an AI service API (like OpenAI's GPT-4 Vision)
-    # 3. Process the response to extract structured attributes
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}"
+    }
     
-    # For now, return dummy data
-    return {
-        "status": True,
-        "clothing_type": "skirt",
+    # Define the prompt for GPT-4 Vision
+    prompt = """
+    Analyze this clothing item and extract the following attributes:
+    1. Type of clothing (e.g., skirt, shirt, dress, pants)
+    2. Primary color
+    3. Style characteristics (e.g., pleated, fitted, loose)
+    4. Length (e.g., mini, knee-length, maxi, ankle-length)
+    5. Material (if identifiable)
+    6. Pattern (e.g., solid, striped, floral)
+    7. Occasion type (e.g., casual, formal, business)
+    8. Fit type (e.g., slim, regular, oversized)
+    9. Search String is a short search string based on the characteristics identified which I would use to search on marketplaces like Zara, Amazon etc
+    
+    Return only a JSON string with this structure, without markdown formatting.:
+    {
+        "clothing_type": "string",
         "attributes": {
-            "color": "black",
-            "style": "pleated",
-            "length": "knee-length",
-            "material": "cotton blend",
-            "pattern": "solid",
-            "occasion": "casual",
-            "fit": "A-line"
+            "color": "string",
+            "style": "string",
+            "length": "string",
+            "material": "string",
+            "pattern": "string",
+            "occasion": "string",
+            "fit": "string"
+            "search_string": "string"
         }
     }
+    """
+    
+    # Prepare the payload for OpenAI API
+    payload = {
+        "model": "gpt-4o-mini",
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}"
+                        }
+                    }
+                ]
+            }
+        ],
+        "max_tokens": 2000
+    }
+    
+    # Make the API request
+    response = requests.post(
+        "https://api.openai.com/v1/chat/completions",
+        headers=headers,
+        json=payload
+    )
+    print(str(response))
+    
+    # Process the response
+    if response.status_code == 200:
+        result = response.json()
+        print('result')
+        print(result)
+        content = result['choices'][0]['message']['content'].strip()
+        print('content')
+        print(content)
+        try:
+            clothing_data = json.loads(content)
+            clothing_data["status"] = True
+            return clothing_data
+        except json.JSONDecodeError:
+            return {"status": False, "error": "Failed to parse AI response"}
+    else:
+        return {"status": False, "error": f"AI service error: {response.status_code}"}
 
 # Route to handle file uploads with rate limiting applied
 @app.route('/api/fashion/find', methods=['POST'])
@@ -125,6 +187,7 @@ def upload_and_find_fashion():
         try:
             # Analyze the image to get clothing attributes
             clothing_data = analyze_clothing_image(file_path)
+            print(str(clothing_data))
             
             if not clothing_data["status"]:
                 logger.error("Failed to analyze image")
@@ -150,8 +213,8 @@ def upload_and_find_fashion():
             logger.info(f"Scraper service response status: {response.status_code}")
             
             # Delete the file after processing
-            os.remove(file_path)
-            logger.info(f"File deleted after processing: {file_path}")
+            # os.remove(file_path)
+            # logger.info(f"File deleted after processing: {file_path}")
             
             if response.status_code == 200:
                 scraper_response = response.json()
