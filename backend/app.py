@@ -207,7 +207,7 @@ def upload_and_find_fashion():
                 json=clothing_data,  # This contains all the clothing attributes
                 timeout=30
             )
-            
+            print(clothing_data)
             # Log the request and response for debugging
             logger.info(f"Sent request to scraper service: {SCRAPER_SERVICE_URL}")
             logger.info(f"Scraper service response status: {response.status_code}")

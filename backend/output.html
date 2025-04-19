@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zara Skirts Collection</title>
+    <style>
+      :root {
+        --primary-color: #222;
+        --secondary-color: #f8f8f8;
+        --accent-color: #e63946;
+        --text-color: #333;
+        --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        --hover-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        --transition: all 0.3s ease;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+      }
+
+      body {
+        background-color: #f9f9f9;
+        color: var(--text-color);
+        padding: 20px;
+        line-height: 1.6;
+      }
+
+      header {
+        text-align: center;
+        padding: 40px 0;
+        margin-bottom: 20px;
+        position: relative;
+      }
+
+      h1 {
+        font-size: 2.5rem;
+        font-weight: 300;
+        letter-spacing: 1px;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+      }
+
+      .search-summary {
+        font-size: 1.1rem;
+        color: #666;
+        font-style: italic;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 30px;
+        padding: 20px 0;
+      }
+
+      .product-card {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: var(--card-shadow);
+        transition: var(--transition);
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--hover-shadow);
+      }
+
+      .product-image {
+        height: 320px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .product-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+      }
+
+      .product-card:hover .product-image img {
+        transform: scale(1.05);
+      }
+
+      .product-info {
+        padding: 20px;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .product-name {
+        font-size: 1rem;
+        font-weight: 500;
+        margin-bottom: 8px;
+        line-height: 1.3;
+      }
+
+      .product-price {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin: 10px 0;
+      }
+
+      .product-attributes {
+        margin-top: auto;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .attribute {
+        background: #f0f0f0;
+        color: #555;
+        font-size: 0.8rem;
+        padding: 4px 10px;
+        border-radius: 20px;
+        display: inline-block;
+      }
+
+      .availability {
+        font-size: 0.85rem;
+        margin-top: 10px;
+        color: #666;
+      }
+
+      .available {
+        color: #2e7d32;
+      }
+
+      .unavailable {
+        color: #c62828;
+      }
+
+      @media (max-width: 1200px) {
+        .products-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      @media (max-width: 900px) {
+        .products-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      @media (max-width: 600px) {
+        .products-grid {
+          grid-template-columns: 1fr;
+        }
+
+        header {
+          padding: 20px 0;
+        }
+
+        h1 {
+          font-size: 1.8rem;
+        }
+      }
+
+      .filters {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .filter-button {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 30px;
+        padding: 8px 16px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: var(--transition);
+      }
+
+      .filter-button:hover,
+      .filter-button.active {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="container">
+        <h1>Zara Skirts Collection</h1>
+        <p class="search-summary">
+          Results for "black flared skirt knee-length"
+        </p>
+      </div>
+    </header>
+
+    <div class="container">
+      <div class="filters">
+        <button class="filter-button active">All</button>
+        <button class="filter-button">Mini</button>
+        <button class="filter-button">Midi</button>
+        <button class="filter-button">Maxi</button>
+        <button class="filter-button">Black</button>
+        <button class="filter-button">Colored</button>
+      </div>
+
+      <div class="products-grid">
+        <!-- Cards will be generated here -->
+      </div>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        // Parse the JSON data
+        const data = {
+          items: [
+            {
+              attributes: {
+                color: 'Black',
+                length: 'mini',
+                material: '',
+                style: '',
+              },
+              availability: 'Available',
+              brand: 'Zara',
+              category: 'Woman',
+              image_url:
+                'https://static.zara.net/assets/public/2850/5052/069c447c89b8/db53aa6380af/02813797800-p/02813797800-p.jpg?ts=1742215215946&w=1024',
+              name: 'STRUCTURED SHORT SKIRT ZW COLLECTION',
+              price: '\u20ac89.90',
+              product_url:
+                'https://www.zara.com/us/en/structured-short-skirt-zw-collection-p02813797.html',
+              size: 'Standard',
+            },
+            {
+              attributes: {
+                color: 'Black',
+                length: 'midi',
+                material: '',
+                style: '',
+              },
+              availability: 'Unavailable at the moment',
+              brand: 'Zara',
+              category: 'Woman',
+              image_url:
+                'https://static.zara.net/assets/public/1daa/70cc/74564233856b/11f51fb1f5fe/02731045800-p/02731045800-p.jpg?ts=1739443103318&w=1024',
+              name: 'FULL MIDI SKIRT ZW COLLECTION',
+              price: '\u20ac29.94',
+              product_url:
+                'https://www.zara.com/us/en/full-midi-skirt-zw-collection-p02731045.html',
+              size: 'Standard',
+            },
+            {
+              attributes: {
+                color: 'Black',
+                length: 'midi',
+                material: '',
+                style: '',
+              },
+              availability: 'Available',
+              brand: 'Zara',
+              category: 'Woman',
+              image_url:
+                'https://static.zara.net/assets/public/49d1/dea6/95a84fdbb9c1/af19ce39f487/00387065800-p/00387065800-p.jpg?ts=1744360031108&w=1024',
+              name: 'LINEN MIDI SKIRT WITH BELT',
+              price: '\u20ac69.90',
+              product_url:
+                'https://www.zara.com/us/en/linen-midi-skirt-with-belt-p00387065.html',
+              size: 'Standard',
+            },
+            {
+              attributes: {
+                color: 'Burgundy',
+                length: 'midi',
+                material: '',
+                style: '',
+              },
+              availability: 'Available',
+              brand: 'Zara',
+              category: 'Woman',
+              image_url:
+                'https://static.zara.net/assets/public/1e6f/301c/128b4baa804a/f73824b2c88e/02731048606-p/02731048606-p.jpg?ts=1739443117941&w=1024',
+              name: 'FULL MIDI SKIRT ZW COLLECTION',
+              price: '\u20ac35.99',
+              product_url:
+                'https://www.zara.com/us/en/full-midi-skirt-zw-collection-p02731045.html',
+              size: 'Standard',
+            },
+            {
+              attributes: {
+                color: 'Oyster-white',
+                length: 'maxi',
+                material: '',
+                style: '',
+              },
+              availability: 'Available',
+              brand: 'Zara',
+              category: 'Woman',
+              image_url:
+                'https://static.zara.net/assets/public/f539/5a70/16664fad8533/9fe1fd5ba3b0/02521290251-p/02521290251-p.jpg?ts=1739884602225&w=1024',
+              name: 'LONG SKIRT ZW COLLECTION',
+              price: '\u20ac89.90',
+              product_url:
+                'https://www.zara.com/us/en/long-skirt-zw-collection-p02521290.html',
+              size: 'Standard',
+            },
+            {
+              attributes: {
+                color: 'Blue',
+                length: 'midi',
+                material: '',
+                style: '',
+              },
+              availability: 'Available',
+              brand: 'Zara',
+              category: 'Woman',
+              image_url:
+                'https://static.zara.net/assets/public/b29a/83fb/c18a43f29cc7/e04b994e5c49/02731045400-p/02731045400-p.jpg?ts=1739443104981&w=1024',
+              name: 'FULL MIDI SKIRT ZW COLLECTION',
+              price: '\u20ac35.99',
+              product_url:
+                'https://www.zara.com/us/en/full-midi-skirt-zw-collection-p02731045.html',
+              size: 'Standard',
+            },
+            {
+              attributes: {
+                color: 'Black',
+                length: 'mini',
+                material: '',
+                style: '',
+              },
+              availability: 'Available',
+              brand: 'Zara',
+              category: 'Woman',
+              image_url:
+                'https://static.zara.net/assets/public/4351/8290/8a1447db93f8/e43381f4b1b7/02251620800-p/02251620800-p.jpg?ts=1737557727361&w=1024',
+              name: 'BELTED CREPE MINI SKIRT',
+              price: '\u20ac45.90',
+              product_url:
+                'https://www.zara.com/us/en/belted-crepe-mini-skirt-p02251620.html',
+              size: 'Standard',
+            },
+            {
+              attributes: {
+                color: 'Wine',
+                length: 'midi',
+                material: '',
+                style: '',
+              },
+              availability: 'Available',
+              brand: 'Zara',
+              category: 'Woman',
+              image_url:
+                'https://static.zara.net/assets/public/ac19/119e/270544349677/cac2cf50510d/03471009660-p/03471009660-p.jpg?ts=1737712277246&w=1024',
+              name: 'BASIC KNIT MIDI SKIRT',
+              price: '\u20ac49.90',
+              product_url:
+                'https://www.zara.com/us/en/basic-knit-midi-skirt-p03471009.html',
+              size: 'Standard',
+            },
+            {
+              attributes: {
+                color: 'Black',
+                length: 'midi',
+                material: '',
+                style: '',
+              },
+              availability: 'Available',
+              brand: 'Zara',
+              category: 'Woman',
+              image_url:
+                'https://static.zara.net/assets/public/b5e7/5ace/07f14577b8c9/45a9c3a158b6/master.m3u8?ts=1742082696434',
+              name: 'LIMITED EDITION RUFFLE MIDI SKIRT',
+              price: '\u20ac129.00',
+              product_url:
+                'https://www.zara.com/us/en/limited-edition-ruffle-midi-skirt-p02595854.html',
+              size: 'Standard',
+            },
+            {
+              attributes: {
+                color: 'White',
+                length: 'Standard',
+                material: '',
+                style: '',
+              },
+              availability: 'Available',
+              brand: 'Zara',
+              category: 'Woman',
+              image_url:
+                'https://static.zara.net/assets/public/de74/7fee/74a643488d5e/1665c650c566/02914672250-p/02914672250-p.jpg?ts=1744294518705&w=1024',
+              name: 'ZW COLLECTION BUTTON CAPE SKIRT',
+              price: '\u20ac99.90',
+              product_url:
+                'https://www.zara.com/us/en/zw-collection-button-cape-skirt-p02914672.html',
+              size: 'Standard',
+            },
+            {
+              attributes: {
+                color: 'Purples',
+                length: 'Standard',
+                material: '',
+                style: '',
+              },
+              availability: 'Available',
+              brand: 'Zara',
+              category: 'Woman',
+              image_url:
+                'https://static.zara.net/assets/public/5af5/e345/b84f477ebe2f/d556debe1966/05039281117-p/05039281117-p.jpg?ts=1735901721088&w=1024',
+              name: 'PLAID TULLE SKIRT',
+              price: '\u20ac35.90',
+              product_url:
+                'https://www.zara.com/us/en/plaid-tulle-skirt-p05039281.html',
+              size: 'Standard',
+            },
+            {
+              attributes: {
+                color: 'White',
+                length: 'midi',
+                material: '',
+                style: '',
+              },
+              availability: 'Available',
+              brand: 'Zara',
+              category: 'Woman',
+              image_url:
+                'https://static.zara.net/assets/public/5b25/c1f4/aa3747279f96/9aca7bf6c15d/01255444250-p/01255444250-p.jpg?ts=1743680107073&w=1024',
+              name: 'PLEATED MIDI SKIRT',
+              price: '\u20ac45.90',
+              product_url:
+                'https://www.zara.com/us/en/pleated-midi-skirt-p01255444.html',
+              size: 'Standard',
+            },
+            {
+              attributes: {
+                color: 'Multicolored',
+                length: 'midi',
+                material: '',
+                style: '',
+              },
+              availability: 'Available',
+              brand: 'Zara',
+              category: 'Woman',
+              image_url:
+                'https://static.zara.net/assets/public/375e/350c/b2f24a7e9653/dd11a411bc51/02183048330-p/02183048330-p.jpg?ts=1743765068116&w=1024',
+              name: 'PRINTED MIDI SKIRT ZW COLLECTION',
+              price: '\u20ac69.90',
+              product_url:
+                'https://www.zara.com/us/en/printed-midi-skirt-zw-collection-p02183048.html',
+              size: 'Standard',
+            },
+            {
+              attributes: {
+                color: 'Ecru',
+                length: 'midi',
+                material: '',
+                style: '',
+              },
+              availability: 'Available',
+              brand: 'Zara',
+              category: 'Woman',
+              image_url:
+                'https://static.zara.net/assets/public/7fda/6316/ab78476ea4d4/93b9198f3ffa/03897070712-p/03897070712-p.jpg?ts=1740595711104&w=1024',
+              name: 'CREPE MIDI SKIRT',
+              price: '\u20ac49.90',
+              product_url:
+                'https://www.zara.com/us/en/crepe-midi-skirt-p03897070.html',
+              size: 'Standard',
+            },
+            {
+              attributes: {
+                color: 'Blues',
+                length: 'maxi',
+                material: '',
+                style: '',
+              },
+              availability: 'Available',
+              brand: 'Zara',
+              category: 'Woman',
+              image_url:
+                'https://static.zara.net/assets/public/5283/830d/945a4c9aaddc/a29888d6f01d/05039130112-p/05039130112-p.jpg?ts=1744196865366&w=1024',
+              name: 'FLORAL PRINT MAXI SKIRT',
+              price: '\u20ac49.90',
+              product_url:
+                'https://www.zara.com/us/en/floral-print-maxi-skirt-p05039130.html',
+              size: 'Standard',
+            },
+            {
+              attributes: {
+                color: 'Black',
+                length: 'mini',
+                material: '',
+                style: '',
+              },
+              availability: 'Available',
+              brand: 'Zara',
+              category: 'Woman',
+              image_url:
+                'https://static.zara.net/assets/public/d0fa/3c20/e83f4d62a2a9/533e29e2b1d7/02731046800-p/02731046800-p.jpg?ts=1739443113715&w=1024',
+              name: 'ZW COLLECTION SHORT SLEEVE SHIRT',
+              price: '\u20ac27.54',
+              product_url:
+                'https://www.zara.com/us/en/zw-collection-short-sleeve-shirt-p02731046.html',
+              size: 'Standard',
+            },
+          ],
+        };
+
+        // Generate cards for each product
+        const productsGrid = document.querySelector('.products-grid');
+
+        data.items.forEach((item) => {
+          // Create product card
+          const card = document.createElement('div');
+          card.className = 'product-card';
+
+          // Set data attributes for filtering
+          card.setAttribute('data-color', item.attributes.color.toLowerCase());
+          card.setAttribute(
+            'data-length',
+            item.attributes.length.toLowerCase()
+          );
+
+          const isAvailable = item.availability
+            .toLowerCase()
+            .includes('available');
+          const availabilityClass = isAvailable ? 'available' : 'unavailable';
+
+          // Get the image URL from the item
+          // Check if the image URL is a video (m3u8 format) and provide a fallback
+          let imageUrl = item.image_url;
+          if (imageUrl.includes('.m3u8')) {
+            // Use a default placeholder for video formats
+            imageUrl = 'https://static.zara.net/assets/public/placeholder.jpg';
+          }
+
+          // Build card HTML
+          card.innerHTML = `
+                    <div class="product-image">
+                        <img src="${imageUrl}" alt="${
+            item.name
+          }" onerror="this.onerror=null; this.src='https://via.placeholder.com/400x320?text=Image+Unavailable';">
+                    </div>
+                    <div class="product-info">
+                        <h3 class="product-name">${item.name}</h3>
+                        <p class="product-price">${item.price}</p>
+                        <div class="product-attributes">
+                            ${
+                              item.attributes.color
+                                ? `<span class="attribute">${item.attributes.color}</span>`
+                                : ''
+                            }
+                            ${
+                              item.attributes.length
+                                ? `<span class="attribute">${item.attributes.length}</span>`
+                                : ''
+                            }
+                            ${
+                              item.attributes.material
+                                ? `<span class="attribute">${item.attributes.material}</span>`
+                                : ''
+                            }
+                            ${
+                              item.attributes.style
+                                ? `<span class="attribute">${item.attributes.style}</span>`
+                                : ''
+                            }
+                        </div>
+                        <p class="availability ${availabilityClass}">${
+            item.availability
+          }</p>
+                    </div>
+                `;
+
+          productsGrid.appendChild(card);
+        });
+
+        // Filter functionality
+        const filterButtons = document.querySelectorAll('.filter-button');
+
+        filterButtons.forEach((button) => {
+          button.addEventListener('click', function () {
+            // Update active state
+            filterButtons.forEach((btn) => btn.classList.remove('active'));
+            this.classList.add('active');
+
+            const filterValue = this.textContent.trim().toLowerCase();
+            const cards = document.querySelectorAll('.product-card');
+
+            cards.forEach((card) => {
+              // Show all if "All" is selected
+              if (filterValue === 'all') {
+                card.style.display = 'block';
+                return;
+              }
+
+              // Filter by length
+              if (
+                filterValue === 'mini' ||
+                filterValue === 'midi' ||
+                filterValue === 'maxi'
+              ) {
+                if (card.getAttribute('data-length').includes(filterValue)) {
+                  card.style.display = 'block';
+                } else {
+                  card.style.display = 'none';
+                }
+              }
+
+              // Filter by color
+              if (filterValue === 'black') {
+                if (card.getAttribute('data-color').includes('black')) {
+                  card.style.display = 'block';
+                } else {
+                  card.style.display = 'none';
+                }
+              }
+
+              // Show all non-black for "Colored" filter
+              if (filterValue === 'colored') {
+                if (!card.getAttribute('data-color').includes('black')) {
+                  card.style.display = 'block';
+                } else {
+                  card.style.display = 'none';
+                }
+              }
+            });
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
