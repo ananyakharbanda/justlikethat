@@ -14,7 +14,8 @@ from flask_cors import CORS
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app)  # Enable CORS for all routes
+# CORS(app)  # Enable CORS for all routes
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 
 # Configuration
 # Use a more macOS-friendly path for temporary files
@@ -140,10 +141,7 @@ def analyze_clothing_image(image_path):
     # Process the response
     if response.status_code == 200:
         result = response.json()
-        print('result')
-        print(result)
         content = result['choices'][0]['message']['content'].strip()
-        print('content')
         print(content)
         try:
             clothing_data = json.loads(content)
@@ -153,6 +151,11 @@ def analyze_clothing_image(image_path):
             return {"status": False, "error": "Failed to parse AI response"}
     else:
         return {"status": False, "error": f"AI service error: {response.status_code}"}
+    
+
+@app.route('/')
+def index():
+    return app.send_static_file('index.html')
 
 # Route to handle file uploads with rate limiting applied
 @app.route('/api/fashion/find', methods=['POST'])
@@ -187,6 +190,7 @@ def upload_and_find_fashion():
         try:
             # Analyze the image to get clothing attributes
             clothing_data = analyze_clothing_image(file_path)
+            print('clothing data---------------------')
             print(str(clothing_data))
             
             if not clothing_data["status"]:
@@ -207,6 +211,7 @@ def upload_and_find_fashion():
                 json=clothing_data,  # This contains all the clothing attributes
                 timeout=30
             )
+            print('2 clothing data =================')
             print(clothing_data)
             # Log the request and response for debugging
             logger.info(f"Sent request to scraper service: {SCRAPER_SERVICE_URL}")
@@ -219,6 +224,7 @@ def upload_and_find_fashion():
             if response.status_code == 200:
                 scraper_response = response.json()
                 logger.info(f"Received response from scraper: {json.dumps(scraper_response)}")
+                print(jsonify(scraper_response))
                 return jsonify(scraper_response), 200
             else:
                 logger.error(f"Scraper service error: {response.text}")
