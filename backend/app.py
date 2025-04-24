@@ -153,9 +153,9 @@ def analyze_clothing_image(image_path):
         return {"status": False, "error": f"AI service error: {response.status_code}"}
     
 
-@app.route('/')
-def index():
-    return app.send_static_file('index.html')
+# @app.route('/')
+# def index():
+#     return app.send_static_file('index.html')
 
 # Route to handle file uploads with rate limiting applied
 @app.route('/api/fashion/find', methods=['POST'])
@@ -209,7 +209,7 @@ def upload_and_find_fashion():
                 SCRAPER_SERVICE_URL, 
                 headers=headers, 
                 json=clothing_data,  # This contains all the clothing attributes
-                timeout=30
+                timeout=300
             )
             print('2 clothing data =================')
             print(clothing_data)

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ZOPPL</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header>
+      <div class="container">
+        <h1>ZOPPL</h1>
+        <p class="search-summary">
+          Upload your clothing image to find similar items
+        </p>
+      </div>
+    </header>
+
+    <div class="container">
+      <!-- Upload Section -->
+      <div class="upload-section">
+        <h2>Find Similar Clothing Items</h2>
+        <p>
+          Upload an image of clothing you like and we'll find similar items for
+          you
+        </p>
+
+        <div class="upload-area">
+          <input
+            type="file"
+            id="fileInput"
+            accept="image/png, image/jpeg, image/jpg, image/gif, image/webp"
+          />
+          <p>Drag & drop your image here or click to browse</p>
+          <p style="font-size: 0.9rem; color: #666; margin-top: 10px">
+            Supported formats: JPG, PNG, GIF, WEBP
+          </p>
+        </div>
+
+        <div class="preview-container">
+          <img id="imagePreview" src="" alt="Image preview" />
+        </div>
+
+        <button id="uploadButton" class="upload-button" disabled>
+          Find Similar Items
+        </button>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="loading-indicator">
+          <div class="spinner"></div>
+          <p>Analyzing your image...</p>
+        </div>
+      </div>
+
+      <!-- Clothing Analysis Section -->
+      <div class="clothing-analysis" id="clothingAnalysis">
+        <h2>Clothing Analysis</h2>
+        <div class="analysis-grid" id="analysisGrid">
+          <!-- Analysis items will be inserted here -->
+        </div>
+      </div>
+
+      <!-- Results Section -->
+      <h2 class="results-title" id="resultsTitle" style="display: none">
+        Similar Items
+      </h2>
+
+      <div class="filters" id="filterContainer" style="display: none">
+        <!-- Filters will be added dynamically -->
+      </div>
+
+      <div class="no-results" id="noResults">
+        No matching products found. Please try a different image.
+      </div>
+
+      <div class="products-grid" id="productsGrid">
+        <!-- Product cards will be generated here -->
+      </div>
+    </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
