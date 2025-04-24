@@ -5,6 +5,7 @@ import io
 import time
 import json
 import re
+import random
 from flask import Flask, request, jsonify
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -31,10 +32,6 @@ limiter = Limiter(
     storage_uri="memory://"  # Use Redis in production: "redis://localhost:6379/0"
 )
 
-# # Create debug directory for Zara scraper
-# DEBUG_DIR = "zara_debug"
-# if not os.path.exists(DEBUG_DIR):
-#     os.makedirs(DEBUG_DIR)
 
 #########################
 # ZARA SCRAPER FUNCTIONS
@@ -58,14 +55,68 @@ def scrape_zara_search_results(search_term):
     api_responses = []
     
     with sync_playwright() as p:
-        # Use Chromium instead of Firefox as it works better with Zara's site
-        browser = p.chromium.launch(headless=False)
-        context = browser.new_context(
-            viewport={"width": 1366, "height": 768},
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/111.0.0.0 Safari/537.36"
+        # Enhanced browser launch with stealth options
+        browser = p.chromium.launch(
+            headless=True,
+            args=[
+                '--disable-blink-features=AutomationControlled',
+                '--disable-dev-shm-usage',
+                '--no-sandbox',
+                '--window-size=1440,900'
+            ]
         )
         
+        context = browser.new_context(
+            viewport={"width": 1366, "height": 768},
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        )
+        
+        # Add extra headers to seem more like a real browser
+        context.set_extra_http_headers({
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+            "sec-ch-ua": '"Not_A Brand";v="8", "Chromium";v="120"',
+            "sec-ch-ua-platform": '"Windows"',
+            "sec-ch-ua-mobile": "?0",
+            "Sec-Fetch-Dest": "document",
+            "Sec-Fetch-Mode": "navigate",
+            "Sec-Fetch-Site": "none",
+            "Sec-Fetch-User": "?1"
+        })
+        
         page = context.new_page()
+        
+        # Add anti-detection script before navigation
+        page.evaluate("""() => {
+            // Override navigator properties to make detection harder
+            Object.defineProperty(navigator, 'webdriver', {
+                get: () => false,
+            });
+            
+            // Add missing browser properties
+            window.chrome = {
+                runtime: {},
+            };
+            
+            // Add language and plugin data
+            Object.defineProperty(navigator, 'plugins', {
+                get: () => [
+                    {
+                        0: {type: "application/x-google-chrome-pdf"},
+                        description: "Portable Document Format",
+                        name: "Chrome PDF Plugin"
+                    }
+                ],
+            });
+            
+            // Override permissions
+            const originalQuery = window.navigator.permissions.query;
+            window.navigator.permissions.query = (parameters) => (
+                parameters.name === 'notifications' ?
+                Promise.resolve({ state: Notification.permission }) :
+                originalQuery(parameters)
+            );
+        }""")
         
         # Set up network request interception to capture API responses
         def handle_response(response):
@@ -90,64 +141,112 @@ def scrape_zara_search_results(search_term):
                 
         page.on("response", handle_response)
         
-        # Navigate to the page
+        # Navigate to the page with increased timeout
         logger.info(f"Loading URL: {search_url}")
-        page.goto(search_url, timeout=90000)
+        page.goto(search_url, timeout=120000, wait_until="networkidle")
         logger.info("Page loaded successfully")
         
-        # Debug - save page content
-        # html_content = page.content()
-        # # with open(os.path.join(DEBUG_DIR, "page_content.html"), "w", encoding="utf-8") as f:
-        # #     f.write(html_content)
-        # # logger.info("Saved page HTML content for debugging")
+        # Add random wait time to simulate human behavior
+        time.sleep(2 + random.random() * 3)
         
-        # Handle cookies - be more flexible with the selector
+        # Simulate mouse movement
+        page.mouse.move(100 + random.randint(0, 200), 100 + random.randint(0, 100))
+        time.sleep(0.5 + random.random())
+        
+        
+        # Handle cookies - be more aggressive with the selector
         try:
-            cookie_selectors = [
-                "button:has-text('Accept')", 
-                "button:has-text('ACCEPT ALL')",
-                "button:has-text('Accept all')",
-                "[data-testid='cookie-accept-all']",
-                ".cookie-accept-button"
-            ]
-            for selector in cookie_selectors:
-                try:
-                    if page.locator(selector).count() > 0:
-                        page.locator(selector).click(timeout=5000)
-                        logger.info(f"Clicked {selector} button")
-                        break
-                except Exception as click_error:
-                    logger.warning(f"Could not click {selector}: {str(click_error)}")
+            # First check if there's any cookie banner visible
+            cookie_visible = page.evaluate("""() => {
+                return document.body.innerText.includes('cookie') || 
+                       document.body.innerText.includes('Cookie') ||
+                       document.body.innerText.includes('Accept') ||
+                       document.body.innerText.includes('ACCEPT');
+            }""")
+            
+            if cookie_visible:
+                logger.info("Cookie-related text found on page, attempting to accept...")
+                
+                # Try various cookie selectors
+                cookie_selectors = [
+                    "button:has-text('Accept')", 
+                    "button:has-text('ACCEPT ALL')",
+                    "button:has-text('Accept all')",
+                    "[data-testid='cookie-accept-all']",
+                    ".cookie-accept-button",
+                    "button:has-text('Accept cookies')",
+                    "button:has-text('I accept')",
+                    ".cookie-banner button",
+                    "//button[contains(text(), 'Accept')]",
+                    "//button[contains(text(), 'accept')]"
+                ]
+                
+                # Try clicking elements that look like cookie buttons
+                for selector in cookie_selectors:
+                    try:
+                        if page.locator(selector).count() > 0:
+                            logger.info(f"Found cookie button with selector: {selector}")
+                            page.locator(selector).click(timeout=5000)
+                            logger.info(f"Clicked {selector} button")
+                            time.sleep(1)  # Wait after clicking
+                            break
+                    except Exception as click_error:
+                        logger.warning(f"Could not click {selector}: {str(click_error)}")
+                
+                # If no specific selector worked, try a more generic approach
+                if page.locator("dialog").count() > 0 or page.locator("[role='dialog']").count() > 0:
+                    logger.info("Found a dialog, trying to accept it generically")
+                    try:
+                        # Click any button that looks like an accept button
+                        page.evaluate("""() => {
+                            const buttons = Array.from(document.querySelectorAll('button'));
+                            const acceptButton = buttons.find(button => 
+                                button.innerText.toLowerCase().includes('accept') || 
+                                button.innerText.toLowerCase().includes('agree') ||
+                                button.innerText.toLowerCase().includes('continue'));
+                            if (acceptButton) acceptButton.click();
+                        }""")
+                        time.sleep(1)
+                    except Exception as e:
+                        logger.warning(f"Generic dialog handling failed: {e}")
         except Exception as e:
             logger.warning(f"Cookie handling error: {e}")
         
-        # Wait for the page to load and capture more API requests
-        logger.info("Waiting and scrolling to trigger API requests...")
-        time.sleep(3)
+        # Wait for the page to load completely
+        logger.info("Waiting for content to load...")
+        try:
+            # Wait for a product link to appear
+            page.wait_for_selector("a[href*='/product/']", timeout=10000)
+            logger.info("Product links detected on page")
+        except Exception as wait_error:
+            logger.warning(f"Timeout waiting for product links: {str(wait_error)}")
         
-        # Scroll down to trigger lazy loading and more API requests
-        for i in range(5):
-            page.evaluate("window.scrollBy(0, 500)")
-            time.sleep(1)
+        # Scroll down gradually to trigger lazy loading
+        logger.info("Scrolling to trigger lazy loading...")
+        for i in range(8):
+            # Scroll down with a natural speed
+            scroll_amount = 300 + random.randint(200, 400)
+            page.evaluate(f"window.scrollBy(0, {scroll_amount})")
+            
+            # Random wait between scrolls
+            time.sleep(0.5 + random.random() * 1.5)
+            
+            # Occasionally move the mouse while scrolling to look more human
+            if random.random() > 0.6:
+                page.mouse.move(random.randint(100, 800), random.randint(200, 600))
         
-        # Take a screenshot for verification
-        # screenshot_path = os.path.join(DEBUG_DIR, "final_page.png")
-        # page.screenshot(path=screenshot_path)
-        # logger.info(f"Saved screenshot to {screenshot_path}")
-        
-        # Save captured API responses
-        # api_file = os.path.join(DEBUG_DIR, "api_responses.json")
-        # with open(api_file, "w", encoding="utf-8") as f:
-        #     json.dump(api_responses, f, indent=2)
-        # logger.info(f"Saved {len(api_responses)} API responses to {api_file}")
+        # Wait a moment after scrolling
+        time.sleep(2)
         
         # Extract product data from page directly
-        logger.info("Attempting direct page extraction...")
+        logger.info("Extracting products from page...")
         products = []
         
-        # Try finding product grid directly (using both methods)
+        # Try multiple extraction methods
+        
+        # Method 1: Use XPath locator
         try:
-            # Method 1: Use XPath locator (from second scraper)
+            logger.info("Trying XPath method for product cards...")
             product_cards = page.locator('//a[contains(@href, "/product/")]').all()
             logger.info(f"Found {len(product_cards)} product cards with XPath method")
             
@@ -162,11 +261,17 @@ def scrape_zara_search_results(search_term):
                         # Try to get product name
                         product_name = ""
                         try:
-                            name_element = card.locator('//span[contains(@class, "product-name")]').first
+                            name_element = card.locator('span[class*="product-name"]').first
                             if name_element:
                                 product_name = name_element.inner_text().strip()
-                        except:
-                            pass
+                            
+                            # If no name found with specific class, try more generically
+                            if not product_name:
+                                name_element = card.locator('span').first
+                                if name_element:
+                                    product_name = name_element.inner_text().strip()
+                        except Exception as name_error:
+                            logger.warning(f"Error getting product name: {name_error}")
                             
                         if not product_name:
                             product_name = card.inner_text().strip()
@@ -174,11 +279,19 @@ def scrape_zara_search_results(search_term):
                         # Try to get product price
                         product_price = ""
                         try:
-                            price_element = card.locator('//span[contains(@class, "price")]').first
+                            price_element = card.locator('span[class*="price"]').first
                             if price_element:
                                 product_price = price_element.inner_text().strip()
-                        except:
-                            pass
+                                
+                            # If no price found with specific class, try more generically
+                            if not product_price:
+                                # Look for common price patterns in the text
+                                text = card.inner_text()
+                                price_match = re.search(r'(\$|\€|£|\¥)?(\d+[.,]\d{2})', text)
+                                if price_match:
+                                    product_price = price_match.group(0)
+                        except Exception as price_error:
+                            logger.warning(f"Error getting product price: {price_error}")
                             
                         # Try to get product image
                         product_image = ""
@@ -186,10 +299,11 @@ def scrape_zara_search_results(search_term):
                             img_element = card.locator('img').first
                             if img_element:
                                 product_image = img_element.get_attribute('src')
-                        except:
-                            pass
+                        except Exception as img_error:
+                            logger.warning(f"Error getting product image: {img_error}")
                             
-                        if product_name or product_url:
+                        # Add product if we at least have a URL
+                        if product_url:
                             products.append({
                                 'name': product_name or "Unknown Product",
                                 'url': product_url,
@@ -202,48 +316,76 @@ def scrape_zara_search_results(search_term):
         except Exception as cards_error:
             logger.warning(f"Error extracting product cards with XPath: {str(cards_error)}")
         
-        # Method 2: Use evaluate JS (from first scraper)
-        if not products:
+        # Method 2: Use JavaScript evaluation
+        if len(products) < 3:  # Only try this if first method didn't find much
             try:
                 logger.info("Trying JavaScript evaluation method for product links...")
                 links = page.evaluate("""() => {
                     return Array.from(document.querySelectorAll('a[href*="/product/"]')).map(a => {
+                        // Get product name
+                        let name = "";
+                        const nameElement = a.querySelector('span[class*="product-name"], span[class*="item-name"], div[class*="name"]');
+                        if (nameElement) {
+                            name = nameElement.innerText.trim();
+                        } else {
+                            name = a.innerText.trim();
+                        }
+                        
+                        // Get product price
+                        let price = "";
+                        const priceElement = a.querySelector('span[class*="price"], div[class*="price"]');
+                        if (priceElement) {
+                            price = priceElement.innerText.trim();
+                        }
+                        
+                        // Get product image
+                        let image = "";
+                        const imgElement = a.querySelector('img');
+                        if (imgElement) {
+                            image = imgElement.src;
+                        }
+                        
                         return {
                             url: a.href,
-                            text: a.innerText.trim(),
+                            name: name,
+                            price: price,
+                            image: image,
                             hasImage: !!a.querySelector('img')
                         };
                     });
                 }""")
                 
-                # links_file = os.path.join(DEBUG_DIR, "product_links.json")
-                # with open(links_file, "w", encoding="utf-8") as f:
-                #     json.dump(links, f, indent=2)
-                # logger.info(f"Saved product links to {links_file}")
-                
-                # Convert links to products
+                # Convert links to products if not already found by Method 1
                 for link in links:
-                    if link['url'] and (link['text'] or link['hasImage']):
+                    # Check if this URL is already in our products list
+                    url_exists = any(p.get('url') == link['url'] for p in products)
+                    
+                    if not url_exists and link['url'] and (link.get('name') or link.get('hasImage')):
                         products.append({
-                            'name': link['text'] or "Unknown Product",
+                            'name': link.get('name') or "Unknown Product",
                             'url': link['url'],
-                            'source': 'product_links'
+                            'price': link.get('price', ''),
+                            'image': link.get('image', ''),
+                            'source': 'js_product_links'
                         })
-                logger.info(f"Found {len(products)} products with JavaScript method")
-            except Exception as e:
-                logger.warning(f"Error extracting product links with JavaScript: {str(e)}")
-            
+                        
+                logger.info(f"Found {len(products)} total products after JavaScript method")
+            except Exception as js_error:
+                logger.warning(f"Error extracting product links with JavaScript: {str(js_error)}")
+        
         # Try to find product data in the API responses
+        api_products_found = False
         if api_responses:
-            print('=========================================== api responses')
+            logger.info(f"Processing {len(api_responses)} captured API responses")
             for response in api_responses:
                 data = response['data']
                 
                 # Check if this is a product search response
                 if extract_products_from_api(data, products):
                     logger.info(f"Extracted products from {response['url']}")
+                    api_products_found = True
         
-        # Try for structured data - from first scraper
+        # Try for structured data
         try:
             logger.info("Attempting to extract structured data from page...")
             structured_data = page.evaluate("""() => {
@@ -262,22 +404,27 @@ def scrape_zara_search_results(search_term):
                 return results;
             }""")
             
-            # structured_file = os.path.join(DEBUG_DIR, "structured_data.json")
-            # with open(structured_file, "w", encoding="utf-8") as f:
-            #     json.dump(structured_data, f, indent=2)
-            # logger.info(f"Saved structured data to {structured_file}")
-            
             # Try to extract products from structured data
             for data in structured_data:
                 extract_products_from_structured_data(data, products)
         except Exception as e:
             logger.error(f"Error extracting structured data: {e}")
             
-        # Extract window state data - checking both formats
+        # Extract window state data
         try:
+            logger.info("Extracting state data from page...")
             initial_state = page.evaluate("""() => {
-                // Check for Next.js data
-                const stateElement = document.querySelector('[id^="__NEXT_DATA__"]');
+                // Try different state storage patterns
+                if (window.__NEXT_DATA__) {
+                    return window.__NEXT_DATA__;
+                }
+                
+                if (window.__INITIAL_STATE__) {
+                    return window.__INITIAL_STATE__;
+                }
+                
+                // Look for Next.js data in DOM
+                const stateElement = document.getElementById('__NEXT_DATA__');
                 if (stateElement) {
                     try {
                         return JSON.parse(stateElement.textContent);
@@ -286,26 +433,28 @@ def scrape_zara_search_results(search_term):
                     }
                 }
                 
-                // Check for Next.js window data
-                if (window.__NEXT_DATA__) {
-                    return window.__NEXT_DATA__;
-                }
-                
-                // Check for traditional state
-                if (window.__INITIAL_STATE__) {
-                    return window.__INITIAL_STATE__;
+                // Look for any serialized JSON in the page that might contain product data
+                const scripts = Array.from(document.querySelectorAll('script:not([src])'));
+                for (const script of scripts) {
+                    const content = script.textContent.trim();
+                    if (content.includes('"products"') || content.includes('"items"')) {
+                        try {
+                            // Find anything that looks like JSON
+                            const jsonMatch = content.match(/(\{.*\}|\[.*\])/);
+                            if (jsonMatch) {
+                                return JSON.parse(jsonMatch[0]);
+                            }
+                        } catch (e) {
+                            // Continue to next script
+                        }
+                    }
                 }
                 
                 return null;
             }""")
             
             if initial_state:
-                # initial_state_file = os.path.join(DEBUG_DIR, "initial_state.json")
-                # with open(initial_state_file, "w", encoding="utf-8") as f:
-                #     json.dump(initial_state, f, indent=2)
-                # logger.info(f"Saved state data to {initial_state_file}")
-                
-                # # Extract products from initial state
+                # Extract products from initial state
                 extract_products_from_initial_state(initial_state, products)
         except Exception as e:
             logger.error(f"Error extracting state data: {e}")
@@ -313,11 +462,6 @@ def scrape_zara_search_results(search_term):
         # Close the browser
         browser.close()
         
-        # Save the extracted products
-        # results_file = os.path.join(DEBUG_DIR, "extracted_products.json")
-        # with open(results_file, "w", encoding="utf-8") as f:
-        #     json.dump(products, f, indent=2)
-        # logger.info(f"Saved {len(products)} extracted products to {results_file}")
         
         # Try fallback if no products found
         if not products and " " in search_term:
@@ -335,13 +479,30 @@ def scrape_zara_search_results(search_term):
         # Transform to our standard format
         standardized_products = []
         for product in products:
-            product = product['content']
-            print('----------------- at least got products')
-            print(str(product))
-            standardized_products.append(create_standardized_product(product, search_term))
+            try:
+                # Check if product is a dictionary and should have content or is content itself
+                if isinstance(product, dict):
+                    # Some products might have 'content' key, others may not
+                    if 'content' in product:
+                        product_data = product['content']
+                    else:
+                        product_data = product  # Use the product as is
+                else:
+                    logger.warning(f"Skipping non-dict product: {type(product)}")
+                    continue
+                
+                # Add to standardized products
+                standardized_product = create_standardized_product(product_data, search_term)
+                if standardized_product:
+                    standardized_products.append(standardized_product)
+                
+            except Exception as e:
+                logger.error(f"Error standardizing product: {e}")
+                logger.error(f"Problem product: {product}")
+                # Continue processing other products
+                continue
         
         logger.info(f"Returning {len(standardized_products)} standardized products")
-        print(standardized_products)
         return standardized_products
 
 def extract_products_from_api(data, products):
@@ -383,6 +544,26 @@ def extract_products_from_api(data, products):
 
 def create_standardized_product(product, search_term):
     """Create standardized product entry from Zara product data"""
+    # Handle cases where product is None or not a dictionary
+    if not product or not isinstance(product, dict):
+        logger.warning(f"Invalid product data: {product}")
+        return {
+            "name": "Unknown Product",
+            "brand": "Zara",
+            "category": "Women",
+            "size": "Standard",
+            "availability": "Unknown",
+            "price": "Price not available",
+            "image_url": "",
+            "product_url": "",
+            "attributes": {
+                "color": "Unknown",
+                "material": "",
+                "style": "",
+                "length": "Standard"
+            }
+        }
+    
     # Extract all needed information
     color = extract_color_info(product, search_term)
     price = extract_price(product)
@@ -561,20 +742,23 @@ def extract_products_from_initial_state(data, products):
                 
     return False
 
-import re
-
 def extract_size_info(product):
     """Extract size information from Zara product data"""
     # Zara's product structure doesn't typically include size in the search results
     # Size information is usually available when viewing a specific product
     
+    # Handle the case where product is a string or None
+    if not isinstance(product, dict):
+        return "Standard"
+    
     # Check detail object for any size information
-    if 'detail' in product:
+    if 'detail' in product and isinstance(product['detail'], dict):
         # Some Zara products have size in their detail object
         if 'sizes' in product['detail']:
             sizes = product['detail'].get('sizes', [])
             if sizes and len(sizes) > 0:
-                return sizes[0].get('name', 'Standard')
+                if isinstance(sizes[0], dict) and 'name' in sizes[0]:
+                    return sizes[0].get('name', 'Standard')
     
     # Try to extract size from name
     name = product.get('name', '')
@@ -596,15 +780,27 @@ def extract_size_info(product):
 
 def extract_color_info(product, search_term):
     """Extract color information from Zara product data"""
+    # Handle the case where product is a string or None
+    if not isinstance(product, dict):
+        # Try to extract color from search term
+        search_term = search_term.lower()
+        colors = ['black', 'white', 'red', 'blue', 'green', 'yellow', 'purple', 'pink', 
+                'orange', 'brown', 'gray', 'grey', 'beige', 'navy', 'teal', 'cream',
+                'anthracite']
+        for color in colors:
+            if color in search_term:
+                return color.capitalize()
+        return "Unknown"
+        
     # Check for color in the detail colors array
-    if 'detail' in product and 'colors' in product['detail']:
+    if 'detail' in product and isinstance(product['detail'], dict) and 'colors' in product['detail']:
         colors = product['detail']['colors']
-        if colors and len(colors) > 0:
+        if colors and len(colors) > 0 and isinstance(colors[0], dict):
             # Get the first color name (primary color)
             return colors[0].get('name', 'Unknown')
     
     # Check for color in colorInfo
-    if 'colorInfo' in product and 'mainColorHexCode' in product['colorInfo']:
+    if 'colorInfo' in product and isinstance(product['colorInfo'], dict) and 'mainColorHexCode' in product['colorInfo']:
         hex_code = product['colorInfo'].get('mainColorHexCode', '')
         # Could map hex codes to color names, but would need a mapping table
         
@@ -630,6 +826,10 @@ def extract_color_info(product, search_term):
 
 def extract_length_info(product):
     """Extract length information from Zara product data"""
+    # Handle the case where product is a string or None
+    if not isinstance(product, dict):
+        return "Standard"
+        
     # Try to extract length from name
     name = product.get('name', '').lower()
     
@@ -651,6 +851,10 @@ def extract_length_info(product):
 
 def extract_price(product):
     """Extract and format price information from Zara product data"""
+    # Handle the case where product is a string or None
+    if not isinstance(product, dict):
+        return "Price not available"
+        
     # The price is directly in the product object in Zara's structure
     price = product.get('price', None)
     
@@ -668,10 +872,14 @@ def extract_price(product):
         # Remove non-numeric characters except for decimal point
         price_str = ''.join([c for c in price if c.isdigit() or c == '.'])
         try:
-            price_float = float(price_str)
-            return f"€{price_float:.2f}"
+            if price_str:
+                price_float = float(price_str)
+                return f"€{price_float:.2f}"
+            else:
+                return "Price not available"
         except:
-            return price
+            # If we can't convert to float, return the original string
+            return price if price else "Price not available"
     
     # If price is a dict, try to extract value
     if isinstance(price, dict):
@@ -682,15 +890,19 @@ def extract_price(product):
                     return f"€{value:.2f}"
                 if isinstance(value, str):
                     try:
-                        value_float = float(''.join([c for c in value if c.isdigit() or c == '.']))
-                        return f"€{value_float:.2f}"
+                        digits_only = ''.join([c for c in value if c.isdigit() or c == '.'])
+                        if digits_only:
+                            value_float = float(digits_only)
+                            return f"€{value_float:.2f}"
+                        else:
+                            return value if value else "Price not available"
                     except:
-                        return value
+                        return value if value else "Price not available"
     
     # Check for price in color details
-    if 'detail' in product and 'colors' in product['detail']:
+    if 'detail' in product and isinstance(product['detail'], dict) and 'colors' in product['detail']:
         colors = product['detail']['colors']
-        if colors and len(colors) > 0 and 'price' in colors[0]:
+        if colors and len(colors) > 0 and isinstance(colors[0], dict) and 'price' in colors[0]:
             color_price = colors[0]['price']
             if isinstance(color_price, (int, float)):
                 if color_price > 100:  # Likely in cents
@@ -703,42 +915,73 @@ def extract_price(product):
 
 def extract_image_url(product):
     """Extract the main image URL from Zara product data"""
+    # Handle the case where product is a string or None
+    if not isinstance(product, dict):
+        return ""
+        
+    # First check if we directly have an 'image' field in the product
+    if 'image' in product and product['image']:
+        return product['image']
+        
     # Check in xmedia array first
-    if 'xmedia' in product and product['xmedia'] and len(product['xmedia']) > 0:
+    if ('xmedia' in product and isinstance(product['xmedia'], list) and 
+            len(product['xmedia']) > 0 and isinstance(product['xmedia'][0], dict)):
         media_item = product['xmedia'][0]
         if 'url' in media_item:
             # Replace {width} placeholder with a reasonable size (e.g., 1024)
             return media_item['url'].replace('{width}', '1024')
     
     # Check in detail.colors[].xmedia
-    if 'detail' in product and 'colors' in product['detail']:
+    if ('detail' in product and isinstance(product['detail'], dict) and 
+            'colors' in product['detail'] and isinstance(product['detail']['colors'], list) and 
+            len(product['detail']['colors']) > 0 and isinstance(product['detail']['colors'][0], dict)):
         colors = product['detail']['colors']
-        if colors and len(colors) > 0 and 'xmedia' in colors[0]:
+        if ('xmedia' in colors[0] and isinstance(colors[0]['xmedia'], list) and 
+                len(colors[0]['xmedia']) > 0 and isinstance(colors[0]['xmedia'][0], dict)):
             color_media = colors[0]['xmedia']
-            if color_media and len(color_media) > 0 and 'url' in color_media[0]:
+            if 'url' in color_media[0]:
                 return color_media[0]['url'].replace('{width}', '1024')
     
     return ""
 
 def extract_product_url(product):
     """Construct product URL from reference or ID"""
+    # Handle the case where product is a string or None
+    if not isinstance(product, dict):
+        return ""
+        
+    # First check if we already have a URL
+    if 'url' in product and product['url']:
+        # Make sure it's absolute
+        url = product['url']
+        if url.startswith('/'):
+            return f"https://www.zara.com{url}"
+        return url
+        
     # Typically, Zara product URLs follow a pattern
-    if 'seo' in product and 'keyword' in product['seo']:
+    if ('seo' in product and isinstance(product['seo'], dict) and 
+            'keyword' in product['seo']):
         keyword = product['seo']['keyword']
         product_id = product.get('id', '')
         
         # Example: https://www.zara.com/us/en/voluminous-soft-midi-skirt-p05039379.html
-        if 'detail' in product and 'reference' in product['detail']:
+        if ('detail' in product and isinstance(product['detail'], dict) and 
+                'reference' in product['detail']):
             ref = product['detail']['reference']
             # Extract the base reference without color code
-            base_ref = ref.split('-')[0]
-            if base_ref.startswith('0'):
-                return f"https://www.zara.com/us/en/{keyword}-p{base_ref}.html"
+            try:
+                base_ref = ref.split('-')[0]
+                if base_ref.startswith('0'):
+                    return f"https://www.zara.com/us/en/{keyword}-p{base_ref}.html"
+            except:
+                pass
     
     # Fallback method using just the product ID
     product_id = product.get('id', '')
-    return f"https://www.zara.com/us/en/product/{product_id}"
-
+    if product_id:
+        return f"https://www.zara.com/us/en/product/{product_id}"
+    
+    return ""
 
 #########################
 # SCRAPING FUNCTIONS
@@ -824,12 +1067,12 @@ def scrape_fashion_endpoint():
             logger.error("No clothing attributes provided")
             return jsonify({"status": False, "message": "No clothing attributes provided"}), 400
         
-        # Validate the input data structure
-        if "clothing_type" not in clothing_attributes:
-            logger.error("Missing required field: clothing_type")
+        # Validate the input data structure but be more flexible
+        if "clothing_type" not in clothing_attributes and "search_string" not in clothing_attributes.get("attributes", {}):
+            logger.error("Missing required fields: either clothing_type or search_string is required")
             return jsonify({
                 "status": False, 
-                "message": "Missing required field: clothing_type"
+                "message": "Missing required fields: either clothing_type or search_string is required"
             }), 400
         
         # Scrape fashion sites for items matching the attributes
@@ -870,6 +1113,10 @@ def scrape_fashion_endpoint():
             "message": f"An internal error occurred: {str(e)}"
         }), 500
 
+# Health check endpoint
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({"status": "healthy", "service": "zara-fashion-scraper"}), 200
 
 # Main entry point
 if __name__ == '__main__':
