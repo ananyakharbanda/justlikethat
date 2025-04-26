@@ -272,10 +272,6 @@ document.addEventListener('DOMContentLoaded', function () {
   function displayProducts(products) {
     // Clear previous products
     productsGrid.innerHTML = '';
-    console.log(
-      'productsGrid exists:',
-      !!document.getElementById('productsGrid')
-    );
 
     // Filter out products without valid images
     const validProducts = products.filter((product) => {

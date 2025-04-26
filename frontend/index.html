@@ -5,25 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>ZOPPL</title>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link
+      rel="alternate icon"
+      type="image/png"
+      sizes="32x32"
+      href="/favicon-32x32.png"
+    />
+    <link
+      rel="alternate icon"
+      type="image/png"
+      sizes="16x16"
+      href="/favicon-16x16.png"
+    />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
   </head>
   <body>
-    <header>
+    <nav class="navbar">
       <div class="container">
-        <h1>ZOPPL</h1>
-        <p class="search-summary">
-          Upload your clothing image to find similar items
-        </p>
+        <div class="logo-container">
+          <img src="logo.png" alt="ZOPPL Logo" class="logo-image" />
+        </div>
+        <ul class="nav-links">
+          <li><a href="index.html" class="active">Home</a></li>
+          <li><a href="about.html">About Us</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <header class="modern-header">
+      <div class="container">
+        <div class="header-content">
+          <h1>Find Your Style</h1>
+          <p class="search-summarymain">Outfit déjà vu? Let's track it down.</p>
+          <a href="#upload-section" class="cta-button">Get Started</a>
+        </div>
       </div>
     </header>
 
     <div class="container">
       <!-- Upload Section -->
-      <div class="upload-section">
-        <h2>Find Similar Clothing Items</h2>
-        <p>
+      <div class="upload-section" id="upload-section">
+        <h2>Snap your style inspo. We’ll do the rest.</h2>
+        <!-- <p>
           Upload an image of clothing you like and we'll find similar items for
           you
-        </p>
+        </p> -->
 
         <div class="upload-area">
           <input
@@ -78,6 +106,12 @@
         <!-- Product cards will be generated here -->
       </div>
     </div>
+
+    <footer>
+      <div class="container">
+        <p>&copy; 2025 ZOPPL. All rights reserved.</p>
+      </div>
+    </footer>
 
     <script src="script.js"></script>
   </body>
