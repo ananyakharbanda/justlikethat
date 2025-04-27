@@ -68,12 +68,10 @@ def analyze_clothing_image(image_path):
     """Analyze clothing in an image using ChatGPT Vision API"""
     # Get API key from environment variable
     api_key = os.getenv('OPENAI_API_KEY')
-    print(api_key)
     if not api_key:
         return {"status": False, "error": "OpenAI API key not configured"}
     
     # Convert image to base64
-    print(image_path)
     base64_image = encode_image(image_path)
     
     headers = {
@@ -136,13 +134,11 @@ def analyze_clothing_image(image_path):
         headers=headers,
         json=payload
     )
-    print(str(response))
     
     # Process the response
     if response.status_code == 200:
         result = response.json()
         content = result['choices'][0]['message']['content'].strip()
-        print(content)
         try:
             clothing_data = json.loads(content)
             clothing_data["status"] = True
@@ -190,13 +186,11 @@ def upload_and_find_fashion():
         try:
             # Analyze the image to get clothing attributes
             clothing_data = analyze_clothing_image(file_path)
-            print('clothing data---------------------')
-            print(str(clothing_data))
+            os.remove(file_path)
             
             if not clothing_data["status"]:
                 logger.error("Failed to analyze image")
                 # Delete the file on error
-                os.remove(file_path)
                 return jsonify({"status": False, "message": "Failed to analyze image"}), 500
             
             logger.info(f"Image analysis complete. Clothing attributes: {json.dumps(clothing_data)}")
@@ -211,8 +205,6 @@ def upload_and_find_fashion():
                 json=clothing_data,  # This contains all the clothing attributes
                 timeout=300
             )
-            print('2 clothing data =================')
-            print(clothing_data)
             # Log the request and response for debugging
             logger.info(f"Sent request to scraper service: {SCRAPER_SERVICE_URL}")
             logger.info(f"Scraper service response status: {response.status_code}")
@@ -224,7 +216,6 @@ def upload_and_find_fashion():
             if response.status_code == 200:
                 scraper_response = response.json()
                 logger.info(f"Received response from scraper: {json.dumps(scraper_response)}")
-                print(jsonify(scraper_response))
                 return jsonify(scraper_response), 200
             else:
                 logger.error(f"Scraper service error: {response.text}")
