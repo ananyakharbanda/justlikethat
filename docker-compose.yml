@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  nginx:
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./frontend:/usr/share/nginx/html
+      - ./ssl:/etc/nginx/ssl
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/backend/Dockerfile
+    expose:
+      - '5001'
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SCRAPER_SERVICE_URL=http://zara-scraper:5002/api/scrape
+    volumes:
+      - ./backend:/app
+      - fashion_finder_tmp:/root/fashion_finder_tmp
+    depends_on:
+      - zara-scraper
+    restart: always
+    networks:
+      - app-network
+
+  zara-scraper:
+    build:
+      context: ./backend/zara
+      dockerfile: ../../docker/zara/Dockerfile
+    expose:
+      - '5002'
+    volumes:
+      - ./backend/zara:/app
+    restart: always
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  fashion_finder_tmp:
