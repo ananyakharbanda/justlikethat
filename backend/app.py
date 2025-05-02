@@ -15,9 +15,10 @@ from flask_cors import CORS
 # Initialize Flask app
 app = Flask(__name__)
 # CORS(app)  # Enable CORS for all routes
-CORS(app, origins="*", methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "Authorization"])
+# CORS(app, origins="*", methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "Authorization"])
 # Configuration
 # Use a more macOS-friendly path for temporary files
+
 UPLOAD_FOLDER = os.path.join(os.path.expanduser('~'), 'fashion_finder_tmp')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max file size
