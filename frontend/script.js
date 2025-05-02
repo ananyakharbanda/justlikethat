@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function () {
     console.log('File selected:', fileInput.files[0].name);
 
     // Use the ABSOLUTE URL to your backend
-    const backendUrl = 'https://54.79.212.254:5001/api/fashion/find';
+    const backendUrl = 'https://54.79.212.254/api/fashion/find';
 
     // Send image to backend with explicit mode
     fetch(backendUrl, {
