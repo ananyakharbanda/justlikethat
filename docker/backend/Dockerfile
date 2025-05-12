@@ -25,7 +25,7 @@ ENV HM_SCRAPER_URL=http://hm-scraper:5003/api/scrape
 RUN mkdir -p /root/fashion_finder_tmp
 
 # Create gunicorn config file
-RUN echo 'timeout = 300\nworkers = 1\nthreads = 2\nworker_class = "gthread"' > gunicorn_config.py
+RUN echo 'timeout = 300\nworkers = 1\nthreads = 2\nworker_class = "gthread"' > /home/ec2-user/justlikethat/gunicorn_config.py
 
 # Run gunicorn with increased timeout and single worker
-CMD ["gunicorn", "--config", "gunicorn_config.py", "--bind", "0.0.0.0:5001", "app:app"]
+CMD ["gunicorn", "--config", "//home/ec2-user/justlikethat/gunicorn_config.py", "--bind", "0.0.0.0:5001", "app:app"]
