@@ -27,4 +27,4 @@ RUN mkdir -p /root/fashion_finder_tmp
 # Create gunicorn config file
 
 # Run gunicorn with increased timeout and single worker
-CMD ["gunicorn", "--config", "--workers", "1", "--timeout", "300", "--bind", "0.0.0.0:5001", "app:app"]
+CMD ["gunicorn", "--workers", "1", "--timeout", "300", "--bind", "0.0.0.0:5001", "app:app"]
