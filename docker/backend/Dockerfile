@@ -24,5 +24,8 @@ ENV HM_SCRAPER_URL=http://hm-scraper:5003/api/scrape
 # Create directory for temporary files
 RUN mkdir -p /root/fashion_finder_tmp
 
-# Run gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:5001", "--workers", "3", "app:app"]
+# Create gunicorn config file
+RUN echo 'timeout = 300\nworkers = 1\nthreads = 2\nworker_class = "gthread"' > gunicorn_config.py
+
+# Run gunicorn with increased timeout and single worker
+CMD ["gunicorn", "--config", "gunicorn_config.py", "--bind", "0.0.0.0:5001", "app:app"]
