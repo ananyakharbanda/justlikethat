@@ -1,14 +1,11 @@
 name: Deploy to AWS EC2
-
 on:
   push:
     branches:
       - main
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -36,9 +33,34 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # Create directory if it doesn't exist
+            mkdir -p /home/ec2-user/justlikethat
             cd /home/ec2-user/justlikethat
-            git pull
+
+            # Check if .git exists, if not initialize repository
+            if [ ! -d .git ]; then
+              git init
+              git remote add origin https://github.com/ananyakharbanda/justlikethat.git
+            fi
+
+            # Update remote URL in case it changed
+            git remote set-url origin https://github.com/ananyakharbanda/justlikethat.git
+
+            # Fetch and reset to handle potential conflicts
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Copy environment file from secure location
             cp /home/ec2-user/.env .env
-            docker-compose -f docker-compose.yml down
-            docker-compose -f docker-compose.yml up -d --build
-            docker system prune -af
+
+            # Check if docker-compose exists before running docker commands
+            if [ -f docker-compose.yml ]; then
+              docker-compose -f docker-compose.yml down
+              docker-compose -f docker-compose.yml up -d --build
+              docker system prune -af
+              echo "Deployment completed successfully!"
+            else
+              echo "Error: docker-compose.yml not found"
+              ls -la  # List files to debug
+              exit 1
+            fi
