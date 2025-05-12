@@ -53,6 +53,15 @@ jobs:
             # Copy environment file from secure location
             cp /home/ec2-user/.env .env
 
+            # Ensure SSL directories and symlinks are set up
+            if [ ! -d /etc/nginx/ssl ]; then
+              sudo mkdir -p /etc/nginx/ssl
+            fi
+
+            # Create or update symlinks to SSL certificates
+            sudo ln -sf /etc/letsencrypt/live/api.zoppl.com/fullchain.pem /etc/nginx/ssl/api.zoppl.com.crt
+            sudo ln -sf /etc/letsencrypt/live/api.zoppl.com/privkey.pem /etc/nginx/ssl/api.zoppl.com.key
+
             # Check if docker-compose exists before running docker commands
             if [ -f docker-compose.yml ]; then
               docker-compose -f docker-compose.yml down
