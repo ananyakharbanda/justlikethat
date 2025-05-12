@@ -47,4 +47,4 @@ COPY . .
 EXPOSE 5003
 
 # Run with gunicorn using your hmscraper.py file
-CMD ["gunicorn", "--bind", "0.0.0.0:5003", "--workers", "2", "--timeout", "300", "hmscraper:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5003", "--workers", "1", "--timeout", "300", "hmscraper:app"]
