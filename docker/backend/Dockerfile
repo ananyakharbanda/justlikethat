@@ -17,7 +17,9 @@ COPY . .
 # Set environment variables
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
-ENV SCRAPER_SERVICE_URL=http://zara-scraper:5002/api/scrape
+# ENV SCRAPER_SERVICE_URL=http://zara-scraper:5002/api/scrape
+ENV ZARA_SCRAPER_URL=http://zara-scraper:5002/api/scrape
+ENV HM_SCRAPER_URL=http://hm-scraper:5003/api/scrape
 
 # Create directory for temporary files
 RUN mkdir -p /root/fashion_finder_tmp

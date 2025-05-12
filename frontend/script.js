@@ -14,6 +14,14 @@ document.addEventListener('DOMContentLoaded', function () {
   const noResults = document.getElementById('noResults');
   const uploadArea = document.querySelector('.upload-area');
 
+  // Function to replace Euro symbol with Dollar symbol and handle price format properly
+  function formatPrice(priceString) {
+    if (!priceString) return '';
+
+    // Simply replace € with $
+    return priceString.replace('€', '$');
+  }
+
   // Handle file selection
   fileInput.addEventListener('change', function () {
     const file = this.files[0];
@@ -89,11 +97,12 @@ document.addEventListener('DOMContentLoaded', function () {
     formData.append('image', fileInput.files[0]);
 
     // Log for debugging
-    console.log('About to send request to backend');
-    console.log('File selected:', fileInput.files[0].name);
+    // console.log('About to send request to backend');
+    // console.log('File selected:', fileInput.files[0].name);
 
-    // Use the ABSOLUTE URL to your backend
+    // Use the correct URL to your backend (adjust as needed)
     const backendUrl = 'https://api.zoppl.com/api/fashion/find';
+    // const backendUrl = 'http://localhost:5001/api/fashion/find';
 
     // Send image to backend with explicit mode
     fetch(backendUrl, {
@@ -102,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function () {
       mode: 'cors', // Explicitly set CORS mode
     })
       .then((response) => {
-        console.log('Response status:', response.status);
+        // console.log('Response status:', response.status);
         if (!response.ok) {
           return response.json().then((data) => {
             throw new Error(data.message || 'Server error occurred');
@@ -111,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return response.json();
       })
       .then((data) => {
-        console.log('Response data:', data);
+        // console.log('Response data:', data);
         // Hide loading indicator
         loadingIndicator.style.display = 'none';
 
@@ -157,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function () {
           products = data;
         }
 
-        console.log('Products data found:', products);
+        // console.log('Products data found:', products);
 
         // Display products if available
         if (products && products.length > 0) {
@@ -182,9 +191,9 @@ document.addEventListener('DOMContentLoaded', function () {
         loadingIndicator.style.display = 'none';
 
         // Show detailed error in console
-        console.error('Error details:', error);
-        console.error('Error message:', error.message);
-        console.error('Error name:', error.name);
+        // console.error('Error details:', error);
+        // console.error('Error message:', error.message);
+        // console.error('Error name:', error.name);
 
         // Show error message to user
         showError(error.message || 'An error occurred');
@@ -269,6 +278,146 @@ document.addEventListener('DOMContentLoaded', function () {
     analysisGrid.appendChild(item);
   }
 
+  // function displayProducts(products) {
+  //   // Clear previous products
+  //   productsGrid.innerHTML = '';
+
+  //   // For debugging: Log all image URLs to check if H&M images have issues
+  //   console.log('All product image URLs:');
+  //   products.forEach((product, index) => {
+  //     console.log(
+  //       `Product ${index} (${product.retailer || 'unknown'}): ${
+  //         product.image_url || 'No image'
+  //       }`
+  //     );
+  //   });
+
+  //   // Filter out products without valid images
+  //   const validProducts = products.filter((product) => {
+  //     // Check if we have an image URL - be more inclusive with H&M
+  //     const imageUrl = product.image_url || '';
+
+  //     // Skip products without images or with m3u8 video format
+  //     // But accept any URL format that seems valid
+  //     return imageUrl && !imageUrl.includes('.m3u8');
+  //   });
+
+  //   console.log(
+  //     `Displaying ${validProducts.length} of ${
+  //       products.length
+  //     } products (filtered out ${
+  //       products.length - validProducts.length
+  //     } invalid images)`
+  //   );
+
+  //   validProducts.forEach((product) => {
+  //     // Create product card
+  //     const card = document.createElement('div');
+  //     card.className = 'product-card';
+
+  //     // Set data attributes for filtering
+  //     if (product.attributes) {
+  //       if (product.attributes.color) {
+  //         card.setAttribute(
+  //           'data-color',
+  //           product.attributes.color.toLowerCase()
+  //         );
+  //       }
+  //       if (product.attributes.length) {
+  //         card.setAttribute(
+  //           'data-length',
+  //           product.attributes.length.toLowerCase()
+  //         );
+  //       }
+  //       if (product.attributes.style) {
+  //         card.setAttribute(
+  //           'data-style',
+  //           product.attributes.style.toLowerCase()
+  //         );
+  //       }
+  //       if (product.attributes.material) {
+  //         card.setAttribute(
+  //           'data-material',
+  //           product.attributes.material.toLowerCase()
+  //         );
+  //       }
+  //     }
+
+  //     // Check if product is available
+  //     const isAvailable = product.availability
+  //       ? product.availability.toLowerCase().includes('available')
+  //       : true;
+  //     const availabilityClass = isAvailable ? 'available' : 'unavailable';
+
+  //     // Format the price properly
+  //     const displayPrice = product.price ? formatPrice(product.price) : '';
+
+  //     // Get image URL, ensure it has a protocol (fix for H&M images)
+  //     let imageUrl = product.image_url || '';
+  //     if (imageUrl && imageUrl.startsWith('//')) {
+  //       imageUrl = 'https:' + imageUrl;
+  //     }
+
+  //     // For debugging
+  //     console.log(
+  //       `Adding product card for: ${product.name}, Image URL: ${imageUrl}`
+  //     );
+
+  //     // Build card HTML
+  //     card.innerHTML = `
+  //   <a href="${
+  //     product.product_url || '#'
+  //   }" class="product-link" target="_blank" rel="noopener noreferrer">
+  //     <div class="retailer-tag ${product.retailer || 'unknown'}">${
+  //       product.retailer || ''
+  //     }</div>
+  //     <div class="product-image">
+  //       <img src="${imageUrl}" alt="${
+  //       product.name || 'Product'
+  //     }" onerror="this.onerror=null; this.src='placeholder.jpg'; console.error('Image failed to load:', this.alt);">
+  //     </div>
+  //     <div class="product-info">
+  //       <h3 class="product-name">${product.name || 'Product'}</h3>
+  //       <p class="product-price">${displayPrice}</p>
+  //       <div class="product-attributes">
+  //         ${
+  //           product.attributes?.color
+  //             ? `<span class="attribute">${product.attributes.color}</span>`
+  //             : ''
+  //         }
+  //         ${
+  //           product.attributes?.length
+  //             ? `<span class="attribute">${product.attributes.length}</span>`
+  //             : ''
+  //         }
+  //         ${
+  //           product.attributes?.material
+  //             ? `<span class="attribute">${product.attributes.material}</span>`
+  //             : ''
+  //         }
+  //         ${
+  //           product.attributes?.style
+  //             ? `<span class="attribute">${product.attributes.style}</span>`
+  //             : ''
+  //         }
+  //       </div>
+  //       ${
+  //         product.availability
+  //           ? `<p class="availability ${availabilityClass}">${product.availability}</p>`
+  //           : ''
+  //       }
+  //     </div>
+  //   </a>`;
+
+  //     productsGrid.appendChild(card);
+  //   });
+
+  //   // Show a message if no valid products were found
+  //   if (validProducts.length === 0) {
+  //     noResults.style.display = 'block';
+  //   }
+  // }
+
   function displayProducts(products) {
     // Clear previous products
     productsGrid.innerHTML = '';
@@ -277,23 +426,21 @@ document.addEventListener('DOMContentLoaded', function () {
     const validProducts = products.filter((product) => {
       // Check if we have an image URL
       const imageUrl = product.image_url || '';
-
-      // Skip products without images or with m3u8 video format
       return imageUrl && !imageUrl.includes('.m3u8');
     });
 
-    console.log(
-      `Displaying ${validProducts.length} of ${
-        products.length
-      } products (filtered out ${
-        products.length - validProducts.length
-      } invalid images)`
-    );
+    // console.log(`Displaying ${validProducts.length} products after filtering`);
 
+    // Create cards for each product with INLINE STYLES for critical elements
     validProducts.forEach((product) => {
-      // Create product card
+      // Create product card with inline background
       const card = document.createElement('div');
       card.className = 'product-card';
+      card.style.background = 'white';
+      card.style.position = 'relative';
+      card.style.borderRadius = '8px';
+      card.style.overflow = 'hidden';
+      card.style.boxShadow = '0 4px 20px rgba(89, 55, 10, 0.08)';
 
       // Set data attributes for filtering
       if (product.attributes) {
@@ -309,71 +456,87 @@ document.addEventListener('DOMContentLoaded', function () {
             product.attributes.length.toLowerCase()
           );
         }
-        if (product.attributes.style) {
-          card.setAttribute(
-            'data-style',
-            product.attributes.style.toLowerCase()
-          );
-        }
-        if (product.attributes.material) {
-          card.setAttribute(
-            'data-material',
-            product.attributes.material.toLowerCase()
-          );
-        }
       }
 
-      // Check if product is available
+      // Get retailer
+      const retailer = product.retailer || 'unknown';
+
+      // Format price
+      const displayPrice = product.price ? formatPrice(product.price) : '';
+
+      // Format image URL
+      let imageUrl = product.image_url || '';
+      if (imageUrl && imageUrl.startsWith('//')) {
+        imageUrl = 'https:' + imageUrl;
+      }
+
+      // Set availability
       const isAvailable = product.availability
         ? product.availability.toLowerCase().includes('available')
         : true;
       const availabilityClass = isAvailable ? 'available' : 'unavailable';
 
-      // Build card HTML
+      // Create card content with all critical styles inline
       card.innerHTML = `
+        <div style="position: absolute; top: 10px; right: 10px; padding: 3px 8px; font-size: 12px; text-transform: uppercase; border-radius: 4px; background-color: ${
+          retailer === 'zara' ? '#000' : '#e50010'
+        }; color: white; z-index: 10;">
+          ${retailer}
+        </div>
+        
         <a href="${
           product.product_url || '#'
-        }" class="product-link" target="_blank" rel="noopener noreferrer"></a>
-        <div class="product-image">
-          <img src="${product.image_url}" alt="${product.name || 'Product'}">
-        </div>
-        <div class="product-info">
-          <h3 class="product-name">${product.name || 'Product'}</h3>
-          <p class="product-price">${product.price || ''}</p>
-          <div class="product-attributes">
+        }" style="display: block; text-decoration: none; color: inherit;" target="_blank">
+          <div style="height: 320px; overflow: hidden;">
+            <img src="${imageUrl}" alt="${
+        product.name || 'Product'
+      }" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.onerror=null; this.src='placeholder.jpg';">
+          </div>
+          
+          <div style="background-color: white; padding: 20px;">
+            <h3 style="font-size: 1rem; font-weight: 500; margin-bottom: 8px; color: #3a3a3a;">${
+              product.name || 'Product'
+            }</h3>
+            <p style="font-size: 1.2rem; font-weight: 600; margin: 10px 0; color: #3a3a3a;">${displayPrice}</p>
+            
+            <div style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 8px;">
+              ${
+                product.attributes?.color
+                  ? `<span style="background: #f0f0f0; color: #555; font-size: 0.8rem; padding: 4px 10px; border-radius: 20px;">${product.attributes.color}</span>`
+                  : ''
+              }
+              ${
+                product.attributes?.length
+                  ? `<span style="background: #f0f0f0; color: #555; font-size: 0.8rem; padding: 4px 10px; border-radius: 20px;">${product.attributes.length}</span>`
+                  : ''
+              }
+              ${
+                product.attributes?.material
+                  ? `<span style="background: #f0f0f0; color: #555; font-size: 0.8rem; padding: 4px 10px; border-radius: 20px;">${product.attributes.material}</span>`
+                  : ''
+              }
+              ${
+                product.attributes?.style
+                  ? `<span style="background: #f0f0f0; color: #555; font-size: 0.8rem; padding: 4px 10px; border-radius: 20px;">${product.attributes.style}</span>`
+                  : ''
+              }
+            </div>
+            
             ${
-              product.attributes?.color
-                ? `<span class="attribute">${product.attributes.color}</span>`
-                : ''
-            }
-            ${
-              product.attributes?.length
-                ? `<span class="attribute">${product.attributes.length}</span>`
-                : ''
-            }
-            ${
-              product.attributes?.material
-                ? `<span class="attribute">${product.attributes.material}</span>`
-                : ''
-            }
-            ${
-              product.attributes?.style
-                ? `<span class="attribute">${product.attributes.style}</span>`
+              product.availability
+                ? `<p style="font-size: 0.85rem; margin-top: 10px; color: ${
+                    isAvailable ? '#2e7d32' : '#c62828'
+                  };">${product.availability}</p>`
                 : ''
             }
           </div>
-          ${
-            product.availability
-              ? `<p class="availability ${availabilityClass}">${product.availability}</p>`
-              : ''
-          }
-        </div>
+        </a>
       `;
 
       productsGrid.appendChild(card);
     });
 
-    // Show a message if no valid products were found
+    // Show no results message if needed
     if (validProducts.length === 0) {
       noResults.style.display = 'block';
     }
@@ -389,8 +552,14 @@ document.addEventListener('DOMContentLoaded', function () {
     // Collect unique values for different attributes
     const colors = new Set();
     const lengths = new Set();
+    const retailers = new Set();
 
     products.forEach((product) => {
+      // Track retailers for filtering
+      if (product.retailer) {
+        retailers.add(product.retailer.toLowerCase());
+      }
+
       if (product.attributes) {
         if (product.attributes.color) {
           colors.add(product.attributes.color.toLowerCase());
@@ -400,6 +569,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       }
     });
+
+    // Add retailer filters
+    if (retailers.size > 0) {
+      retailers.forEach((retailer) => {
+        addFilter(retailer.charAt(0).toUpperCase() + retailer.slice(1));
+      });
+    }
 
     // Add length filters (mini, midi, maxi)
     ['mini', 'midi', 'maxi'].forEach((length) => {
@@ -442,6 +618,24 @@ document.addEventListener('DOMContentLoaded', function () {
           return;
         }
 
+        // Filter by retailer (Zara, H&M)
+        if (filterValue === 'zara' || filterValue === 'hm') {
+          // Method 1: Check the data-retailer attribute (most reliable)
+          if (card.getAttribute('data-retailer') === filterValue) {
+            card.style.display = 'block';
+          }
+          // Method 2: Check if the retailer-tag element has the retailer as a class
+          else {
+            const retailerTag = card.querySelector('.retailer-tag');
+            if (retailerTag && retailerTag.classList.contains(filterValue)) {
+              card.style.display = 'block';
+            } else {
+              card.style.display = 'none';
+            }
+          }
+          return;
+        }
+
         // Filter by length
         if (
           filterValue === 'mini' ||
@@ -456,6 +650,7 @@ document.addEventListener('DOMContentLoaded', function () {
           } else {
             card.style.display = 'none';
           }
+          return;
         }
 
         // Filter by color
@@ -468,6 +663,7 @@ document.addEventListener('DOMContentLoaded', function () {
           } else {
             card.style.display = 'none';
           }
+          return;
         }
 
         // Show all non-black for "Colored" filter
@@ -480,7 +676,11 @@ document.addEventListener('DOMContentLoaded', function () {
           } else {
             card.style.display = 'none';
           }
+          return;
         }
+
+        // If we're here, the filter didn't match any category
+        card.style.display = 'none';
       });
     });
 

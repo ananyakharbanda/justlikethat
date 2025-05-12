@@ -6,6 +6,7 @@ import requests
 import json  # Used for JSON handling
 import time
 import hashlib
+import concurrent.futures
 from flask import Flask, request, jsonify
 from werkzeug.utils import secure_filename
 from flask_limiter import Limiter
@@ -15,14 +16,24 @@ from flask_cors import CORS
 # Initialize Flask app
 app = Flask(__name__)
 # CORS(app)  # Enable CORS for all routes
-# CORS(app, origins="*", methods=["GET", "POST", "OPTIONS"], allow_headers=["Content-Type", "Authorization"])
+# CORS(app, resources={
+#     r"/api/*": {
+#         "origins": "*",
+#         "methods": ["GET", "POST", "OPTIONS"],
+#         "allow_headers": ["Content-Type", "Authorization"]
+#     }
+# })
 # Configuration
 # Use a more macOS-friendly path for temporary files
 
 UPLOAD_FOLDER = os.path.join(os.path.expanduser('~'), 'fashion_finder_tmp')
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max file size
-SCRAPER_SERVICE_URL = os.getenv('SCRAPER_SERVICE_URL', 'http://localhost:5002/api/scrape')
+# SCRAPER_SERVICE_URL = os.getenv('SCRAPER_SERVICE_URL', 'http://localhost:5002/api/scrape')
+# SCRAPER_SERVICE_URL = os.getenv('SCRAPER_SERVICE_URL', 'http://localhost:5003/api/scrape')
+ZARA_SCRAPER_URL = os.getenv('ZARA_SCRAPER_URL', 'http://localhost:5002/api/scrape')
+HM_SCRAPER_URL = os.getenv('HM_SCRAPER_URL', 'http://localhost:5003/api/scrape')
+
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
@@ -153,6 +164,80 @@ def analyze_clothing_image(image_path):
 # def index():
 #     return app.send_static_file('index.html')
 
+def scrape_multiple_retailers(clothing_data):
+    """
+    Scrape products from multiple retailers in parallel
+
+    Args:
+        clothing_data: Dictionary with clothing attributes to search for
+
+    Returns:
+        Dictionary with combined results from all scrapers
+    """
+    all_results = {
+        "status": True,
+        "query": clothing_data.get("attributes", {}).get("search_string", ""),
+        "items": []
+    }
+    
+    headers = {"Content-Type": "application/json"}
+    
+    # Function to scrape a single retailer
+    def scrape_retailer(url, retailer_name):
+        try:
+            response = requests.post(
+                url, 
+                headers=headers, 
+                json=clothing_data,
+                timeout=300
+            )
+            
+            logger.info(f"Response from {retailer_name}: Status {response.status_code}")
+            
+            if response.status_code == 200:
+                result = response.json()
+                
+                # Tag each item with the retailer name
+                if "items" in result and isinstance(result["items"], list):
+                    for item in result["items"]:
+                        item["retailer"] = retailer_name
+                    
+                    return result.get("items", [])
+            
+            logger.error(f"Error from {retailer_name}: {response.status_code}")
+            return []
+            
+        except Exception as e:
+            logger.error(f"Error scraping {retailer_name}: {str(e)}")
+            return []
+    
+    # Dictionary of retailers with their URLs
+    retailers = {
+        "zara": ZARA_SCRAPER_URL,
+        "hm": HM_SCRAPER_URL
+    }
+    
+    # Use ThreadPoolExecutor to scrape from multiple retailers in parallel
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # Create a future for each retailer
+        future_to_retailer = {
+            executor.submit(scrape_retailer, url, retailer_name): retailer_name 
+            for retailer_name, url in retailers.items()
+        }
+        
+        # Collect results as they complete
+        for future in concurrent.futures.as_completed(future_to_retailer):
+            retailer_name = future_to_retailer[future]
+            try:
+                items = future.result()
+                logger.info(f"Got {len(items)} items from {retailer_name}")
+                all_results["items"].extend(items)
+            except Exception as e:
+                logger.error(f"Exception processing results from {retailer_name}: {str(e)}")
+    
+    logger.info(f"Combined results: {len(all_results['items'])} items")
+    return all_results
+
 # Route to handle file uploads with rate limiting applied
 @app.route('/api/fashion/find', methods=['POST'])
 @limiter.limit("10 per minute")  # Specific rate limit for this endpoint
@@ -188,6 +273,7 @@ def upload_and_find_fashion():
             clothing_data = analyze_clothing_image(file_path)
             os.remove(file_path)
             
+            #print(str(clothing_data))
             if not clothing_data["status"]:
                 logger.error("Failed to analyze image")
                 # Delete the file on error
@@ -199,30 +285,35 @@ def upload_and_find_fashion():
             headers = {"Content-Type": "application/json"}
             
             # This is where we send the attributes to the scraper service
-            response = requests.post(
-                SCRAPER_SERVICE_URL, 
-                headers=headers, 
-                json=clothing_data,  # This contains all the clothing attributes
-                timeout=300
-            )
-            # Log the request and response for debugging
-            logger.info(f"Sent request to scraper service: {SCRAPER_SERVICE_URL}")
-            logger.info(f"Scraper service response status: {response.status_code}")
+            # response = requests.post(
+            #     SCRAPER_SERVICE_URL, 
+            #     headers=headers, 
+            #     json=clothing_data,  # This contains all the clothing attributes
+            #     timeout=300
+            # )
+            # # Log the request and response for debugging
+            # logger.info(f"Sent request to scraper service: {SCRAPER_SERVICE_URL}")
+            # logger.info(f"Scraper service response status: {response.status_code}")
             
-            # Delete the file after processing
-            # os.remove(file_path)
-            # logger.info(f"File deleted after processing: {file_path}")
+            # # Delete the file after processing
+            # # os.remove(file_path)
+            # # logger.info(f"File deleted after processing: {file_path}")
             
-            if response.status_code == 200:
-                scraper_response = response.json()
-                logger.info(f"Received response from scraper: {json.dumps(scraper_response)}")
-                return jsonify(scraper_response), 200
-            else:
-                logger.error(f"Scraper service error: {response.text}")
-                return jsonify({
-                    "status": False, 
-                    "message": f"Error from scraper service: {response.status_code} - {response.text}"
-                }), 500
+            # if response.status_code == 200:
+            #     scraper_response = response.json()
+            #     logger.info(f"Received response from scraper: {json.dumps(scraper_response)}")
+            #     return jsonify(scraper_response), 200
+            # else:
+            #     logger.error(f"Scraper service error: {response.text}")
+            #     return jsonify({
+            #         "status": False, 
+            #         "message": f"Error from scraper service: {response.status_code} - {response.text}"
+            #     }), 500
+            # New code: Scrape from multiple retailers in parallel
+            logger.info("Starting parallel scraper calls to multiple retailers")
+            scraper_response = scrape_multiple_retailers(clothing_data)
+            logger.info(f"Received combined response with {len(scraper_response.get('items', []))} items")
+            return jsonify(scraper_response), 200
             
         except requests.RequestException as req_error:
             logger.error(f"Error connecting to scraper service: {str(req_error)}")

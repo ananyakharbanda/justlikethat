@@ -25,12 +25,14 @@ services:
       - '5001'
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - SCRAPER_SERVICE_URL=http://zara-scraper:5002/api/scrape
+      - ZARA_SCRAPER_URL=http://zara-scraper:5002/api/scrape
+      - HM_SCRAPER_URL=http://hm-scraper:5003/api/scrape
     volumes:
       - ./backend:/app
       - fashion_finder_tmp:/root/fashion_finder_tmp
     depends_on:
       - zara-scraper
+      - hm-scraper
     restart: always
     networks:
       - app-network
@@ -47,6 +49,17 @@ services:
     networks:
       - app-network
 
+  hm-scraper:
+    build:
+      context: ./backend/hm
+      dockerfile: ../../docker/hm/Dockerfile
+    expose:
+      - '5003'
+    volumes:
+      - ./backend/hm:/app
+    restart: always
+    networks:
+      - app-network
 networks:
   app-network:
     driver: bridge
