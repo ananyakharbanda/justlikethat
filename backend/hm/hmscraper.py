@@ -185,7 +185,7 @@ def scrape_hm_search_results(search_term):
                             logger.info(f"Found cookie button with selector: {selector}")
                             page.locator(selector).click(timeout=5000)
                             logger.info(f"Clicked {selector} button")
-                            time.sleep(1)  # Increased wait after clicking
+                            time.sleep(0.2)  # Increased wait after clicking
                             break
                     except Exception as click_error:
                         logger.warning(f"Could not click {selector}: {str(click_error)}")
@@ -193,7 +193,7 @@ def scrape_hm_search_results(search_term):
             logger.warning(f"Cookie handling error: {e}")
         
         # Wait a bit longer for page to settle after cookie handling
-        time.sleep(2)
+        time.sleep(0.3)
         
         # Scroll down more aggressively to trigger lazy loading
         logger.info("Scrolling to trigger lazy loading...")
@@ -203,14 +203,14 @@ def scrape_hm_search_results(search_term):
             page.evaluate(f"window.scrollBy(0, {scroll_amount})")
             
             # Longer wait between scrolls
-            time.sleep(0.5 + random.random() * 1.0)
+            time.sleep(random.random() * 1.0)
             
             # Occasionally move the mouse while scrolling to look more human
             if random.random() > 0.6:
                 page.mouse.move(random.randint(100, 800), random.randint(200, 600))
         
         # Wait longer after scrolling
-        time.sleep(3)
+        time.sleep(0.31)
         
         # Extract NEXT_DATA from page for product information
         logger.info("Extracting __NEXT_DATA__ from page...")

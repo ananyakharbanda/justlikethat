@@ -37,477 +37,6 @@ limiter = Limiter(
 # ZARA SCRAPER FUNCTIONS
 #########################
 
-# this function is slower by 8 seconds but returns more results
-# def scrape_zara_search_results(search_term):
-#     """
-#     Scrape Zara for products matching the search term.
-    
-#     Args:
-#         search_term: The search term to look for (e.g., "black skirt")
-        
-#     Returns:
-#         A list of product dictionaries
-#     """
-#     # Create the search URL - using global site instead of country-specific one
-#     search_url = f"https://www.zara.com/us/en/search?searchTerm={search_term.replace(' ', '%20')}&section=WOMAN"
-#     logger.info(f"Scraping Zara with URL: {search_url}")
-    
-#     # Store API responses here
-#     api_responses = []
-    
-#     with sync_playwright() as p:
-#         # Enhanced browser launch with stealth options
-#         browser = p.chromium.launch(
-#             headless=True,
-#             args=[
-#                 '--disable-blink-features=AutomationControlled',
-#                 '--disable-dev-shm-usage',
-#                 '--no-sandbox',
-#                 '--window-size=1440,900'
-#             ]
-#         )
-        
-#         context = browser.new_context(
-#             viewport={"width": 1366, "height": 768},
-#             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-#         )
-        
-#         # Add extra headers to seem more like a real browser
-#         context.set_extra_http_headers({
-#             "Accept-Language": "en-US,en;q=0.9",
-#             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-#             "sec-ch-ua": '"Not_A Brand";v="8", "Chromium";v="120"',
-#             "sec-ch-ua-platform": '"Windows"',
-#             "sec-ch-ua-mobile": "?0",
-#             "Sec-Fetch-Dest": "document",
-#             "Sec-Fetch-Mode": "navigate",
-#             "Sec-Fetch-Site": "none",
-#             "Sec-Fetch-User": "?1"
-#         })
-        
-#         page = context.new_page()
-        
-#         # Add anti-detection script before navigation
-#         page.evaluate("""() => {
-#             // Override navigator properties to make detection harder
-#             Object.defineProperty(navigator, 'webdriver', {
-#                 get: () => false,
-#             });
-            
-#             // Add missing browser properties
-#             window.chrome = {
-#                 runtime: {},
-#             };
-            
-#             // Add language and plugin data
-#             Object.defineProperty(navigator, 'plugins', {
-#                 get: () => [
-#                     {
-#                         0: {type: "application/x-google-chrome-pdf"},
-#                         description: "Portable Document Format",
-#                         name: "Chrome PDF Plugin"
-#                     }
-#                 ],
-#             });
-            
-#             // Override permissions
-#             const originalQuery = window.navigator.permissions.query;
-#             window.navigator.permissions.query = (parameters) => (
-#                 parameters.name === 'notifications' ?
-#                 Promise.resolve({ state: Notification.permission }) :
-#                 originalQuery(parameters)
-#             );
-#         }""")
-        
-#         # Set up network request interception to capture API responses
-#         def handle_response(response):
-#             try:
-#                 url = response.url
-#                 if (
-#                     ('api' in url.lower() or 'search' in url.lower() or 'product' in url.lower()) and 
-#                     (response.status == 200) and
-#                     ('json' in response.headers.get('content-type', '').lower())
-#                 ):
-#                     try:
-#                         data = response.json()
-#                         api_responses.append({
-#                             'url': url,
-#                             'data': data
-#                         })
-#                         logger.info(f"Captured API response from: {url}")
-#                     except Exception as json_error:
-#                         logger.warning(f"Could not parse JSON from {url}: {str(json_error)}")
-#             except Exception as resp_error:
-#                 logger.warning(f"Error handling response: {str(resp_error)}")
-                
-#         page.on("response", handle_response)
-        
-#         # Navigate to the page with increased timeout
-#         logger.info(f"Loading URL: {search_url}")
-#         page.goto(search_url, timeout=120000, wait_until="networkidle")
-#         logger.info("Page loaded successfully")
-        
-#         # Add random wait time to simulate human behavior
-#         time.sleep(2 + random.random() * 3)
-        
-#         # Simulate mouse movement
-#         page.mouse.move(100 + random.randint(0, 200), 100 + random.randint(0, 100))
-#         time.sleep(0.5 + random.random())
-        
-        
-#         # Handle cookies - be more aggressive with the selector
-#         try:
-#             # First check if there's any cookie banner visible
-#             cookie_visible = page.evaluate("""() => {
-#                 return document.body.innerText.includes('cookie') || 
-#                        document.body.innerText.includes('Cookie') ||
-#                        document.body.innerText.includes('Accept') ||
-#                        document.body.innerText.includes('ACCEPT');
-#             }""")
-            
-#             if cookie_visible:
-#                 logger.info("Cookie-related text found on page, attempting to accept...")
-                
-#                 # Try various cookie selectors
-#                 cookie_selectors = [
-#                     "button:has-text('Accept')", 
-#                     "button:has-text('ACCEPT ALL')",
-#                     "button:has-text('Accept all')",
-#                     "[data-testid='cookie-accept-all']",
-#                     ".cookie-accept-button",
-#                     "button:has-text('Accept cookies')",
-#                     "button:has-text('I accept')",
-#                     ".cookie-banner button",
-#                     "//button[contains(text(), 'Accept')]",
-#                     "//button[contains(text(), 'accept')]"
-#                 ]
-                
-#                 # Try clicking elements that look like cookie buttons
-#                 for selector in cookie_selectors:
-#                     try:
-#                         if page.locator(selector).count() > 0:
-#                             logger.info(f"Found cookie button with selector: {selector}")
-#                             page.locator(selector).click(timeout=5000)
-#                             logger.info(f"Clicked {selector} button")
-#                             time.sleep(1)  # Wait after clicking
-#                             break
-#                     except Exception as click_error:
-#                         logger.warning(f"Could not click {selector}: {str(click_error)}")
-                
-#                 # If no specific selector worked, try a more generic approach
-#                 if page.locator("dialog").count() > 0 or page.locator("[role='dialog']").count() > 0:
-#                     logger.info("Found a dialog, trying to accept it generically")
-#                     try:
-#                         # Click any button that looks like an accept button
-#                         page.evaluate("""() => {
-#                             const buttons = Array.from(document.querySelectorAll('button'));
-#                             const acceptButton = buttons.find(button => 
-#                                 button.innerText.toLowerCase().includes('accept') || 
-#                                 button.innerText.toLowerCase().includes('agree') ||
-#                                 button.innerText.toLowerCase().includes('continue'));
-#                             if (acceptButton) acceptButton.click();
-#                         }""")
-#                         time.sleep(1)
-#                     except Exception as e:
-#                         logger.warning(f"Generic dialog handling failed: {e}")
-#         except Exception as e:
-#             logger.warning(f"Cookie handling error: {e}")
-        
-#         # Wait for the page to load completely
-#         logger.info("Waiting for content to load...")
-#         try:
-#             # Wait for a product link to appear
-#             page.wait_for_selector("a[href*='/product/']", timeout=10000)
-#             logger.info("Product links detected on page")
-#         except Exception as wait_error:
-#             logger.warning(f"Timeout waiting for product links: {str(wait_error)}")
-        
-#         # Scroll down gradually to trigger lazy loading
-#         logger.info("Scrolling to trigger lazy loading...")
-#         for i in range(8):
-#             # Scroll down with a natural speed
-#             scroll_amount = 300 + random.randint(200, 400)
-#             page.evaluate(f"window.scrollBy(0, {scroll_amount})")
-            
-#             # Random wait between scrolls
-#             time.sleep(0.5 + random.random() * 1.5)
-            
-#             # Occasionally move the mouse while scrolling to look more human
-#             if random.random() > 0.6:
-#                 page.mouse.move(random.randint(100, 800), random.randint(200, 600))
-        
-#         # Wait a moment after scrolling
-#         time.sleep(2)
-        
-#         # Extract product data from page directly
-#         logger.info("Extracting products from page...")
-#         products = []
-        
-#         # Try multiple extraction methods
-        
-#         # Method 1: Use XPath locator
-#         try:
-#             logger.info("Trying XPath method for product cards...")
-#             product_cards = page.locator('//a[contains(@href, "/product/")]').all()
-#             logger.info(f"Found {len(product_cards)} product cards with XPath method")
-            
-#             for card in product_cards:
-#                 try:
-#                     product_url = card.get_attribute('href')
-#                     if product_url and "/product/" in product_url:
-#                         # Make URL absolute if it's relative
-#                         if product_url.startswith('/'):
-#                             product_url = f"https://www.zara.com{product_url}"
-                            
-#                         # Try to get product name
-#                         product_name = ""
-#                         try:
-#                             name_element = card.locator('span[class*="product-name"]').first
-#                             if name_element:
-#                                 product_name = name_element.inner_text().strip()
-                            
-#                             # If no name found with specific class, try more generically
-#                             if not product_name:
-#                                 name_element = card.locator('span').first
-#                                 if name_element:
-#                                     product_name = name_element.inner_text().strip()
-#                         except Exception as name_error:
-#                             logger.warning(f"Error getting product name: {name_error}")
-                            
-#                         if not product_name:
-#                             product_name = card.inner_text().strip()
-                            
-#                         # Try to get product price
-#                         product_price = ""
-#                         try:
-#                             price_element = card.locator('span[class*="price"]').first
-#                             if price_element:
-#                                 product_price = price_element.inner_text().strip()
-                                
-#                             # If no price found with specific class, try more generically
-#                             if not product_price:
-#                                 # Look for common price patterns in the text
-#                                 text = card.inner_text()
-#                                 price_match = re.search(r'(\$|\€|£|\¥)?(\d+[.,]\d{2})', text)
-#                                 if price_match:
-#                                     product_price = price_match.group(0)
-#                         except Exception as price_error:
-#                             logger.warning(f"Error getting product price: {price_error}")
-                            
-#                         # Try to get product image
-#                         product_image = ""
-#                         try:
-#                             img_element = card.locator('img').first
-#                             if img_element:
-#                                 product_image = img_element.get_attribute('src')
-#                         except Exception as img_error:
-#                             logger.warning(f"Error getting product image: {img_error}")
-                            
-#                         # Add product if we at least have a URL
-#                         if product_url:
-#                             products.append({
-#                                 'name': product_name or "Unknown Product",
-#                                 'url': product_url,
-#                                 'price': product_price,
-#                                 'image': product_image,
-#                                 'source': 'direct_page_extraction'
-#                             })
-#                 except Exception as card_error:
-#                     logger.warning(f"Error processing product card: {str(card_error)}")
-#         except Exception as cards_error:
-#             logger.warning(f"Error extracting product cards with XPath: {str(cards_error)}")
-        
-#         # Method 2: Use JavaScript evaluation
-#         if len(products) < 3:  # Only try this if first method didn't find much
-#             try:
-#                 logger.info("Trying JavaScript evaluation method for product links...")
-#                 links = page.evaluate("""() => {
-#                     return Array.from(document.querySelectorAll('a[href*="/product/"]')).map(a => {
-#                         // Get product name
-#                         let name = "";
-#                         const nameElement = a.querySelector('span[class*="product-name"], span[class*="item-name"], div[class*="name"]');
-#                         if (nameElement) {
-#                             name = nameElement.innerText.trim();
-#                         } else {
-#                             name = a.innerText.trim();
-#                         }
-                        
-#                         // Get product price
-#                         let price = "";
-#                         const priceElement = a.querySelector('span[class*="price"], div[class*="price"]');
-#                         if (priceElement) {
-#                             price = priceElement.innerText.trim();
-#                         }
-                        
-#                         // Get product image
-#                         let image = "";
-#                         const imgElement = a.querySelector('img');
-#                         if (imgElement) {
-#                             image = imgElement.src;
-#                         }
-                        
-#                         return {
-#                             url: a.href,
-#                             name: name,
-#                             price: price,
-#                             image: image,
-#                             hasImage: !!a.querySelector('img')
-#                         };
-#                     });
-#                 }""")
-                
-#                 # Convert links to products if not already found by Method 1
-#                 for link in links:
-#                     # Check if this URL is already in our products list
-#                     url_exists = any(p.get('url') == link['url'] for p in products)
-                    
-#                     if not url_exists and link['url'] and (link.get('name') or link.get('hasImage')):
-#                         products.append({
-#                             'name': link.get('name') or "Unknown Product",
-#                             'url': link['url'],
-#                             'price': link.get('price', ''),
-#                             'image': link.get('image', ''),
-#                             'source': 'js_product_links'
-#                         })
-                        
-#                 logger.info(f"Found {len(products)} total products after JavaScript method")
-#             except Exception as js_error:
-#                 logger.warning(f"Error extracting product links with JavaScript: {str(js_error)}")
-        
-#         # Try to find product data in the API responses
-#         api_products_found = False
-#         if api_responses:
-#             logger.info(f"Processing {len(api_responses)} captured API responses")
-#             for response in api_responses:
-#                 data = response['data']
-                
-#                 # Check if this is a product search response
-#                 if extract_products_from_api(data, products):
-#                     logger.info(f"Extracted products from {response['url']}")
-#                     api_products_found = True
-        
-#         # Try for structured data
-#         try:
-#             logger.info("Attempting to extract structured data from page...")
-#             structured_data = page.evaluate("""() => {
-#                 const results = [];
-#                 const scriptTags = document.querySelectorAll('script[type="application/ld+json"]');
-                
-#                 scriptTags.forEach(tag => {
-#                     try {
-#                         const data = JSON.parse(tag.textContent);
-#                         results.push(data);
-#                     } catch (e) {
-#                         // Skip invalid JSON
-#                     }
-#                 });
-                
-#                 return results;
-#             }""")
-            
-#             # Try to extract products from structured data
-#             for data in structured_data:
-#                 extract_products_from_structured_data(data, products)
-#         except Exception as e:
-#             logger.error(f"Error extracting structured data: {e}")
-            
-#         # Extract window state data
-#         try:
-#             logger.info("Extracting state data from page...")
-#             initial_state = page.evaluate("""() => {
-#                 // Try different state storage patterns
-#                 if (window.__NEXT_DATA__) {
-#                     return window.__NEXT_DATA__;
-#                 }
-                
-#                 if (window.__INITIAL_STATE__) {
-#                     return window.__INITIAL_STATE__;
-#                 }
-                
-#                 // Look for Next.js data in DOM
-#                 const stateElement = document.getElementById('__NEXT_DATA__');
-#                 if (stateElement) {
-#                     try {
-#                         return JSON.parse(stateElement.textContent);
-#                     } catch (e) {
-#                         console.error("Failed to parse Next data", e);
-#                     }
-#                 }
-                
-#                 // Look for any serialized JSON in the page that might contain product data
-#                 const scripts = Array.from(document.querySelectorAll('script:not([src])'));
-#                 for (const script of scripts) {
-#                     const content = script.textContent.trim();
-#                     if (content.includes('"products"') || content.includes('"items"')) {
-#                         try {
-#                             // Find anything that looks like JSON
-#                             const jsonMatch = content.match(/(\{.*\}|\[.*\])/);
-#                             if (jsonMatch) {
-#                                 return JSON.parse(jsonMatch[0]);
-#                             }
-#                         } catch (e) {
-#                             // Continue to next script
-#                         }
-#                     }
-#                 }
-                
-#                 return null;
-#             }""")
-            
-#             if initial_state:
-#                 # Extract products from initial state
-#                 extract_products_from_initial_state(initial_state, products)
-#         except Exception as e:
-#             logger.error(f"Error extracting state data: {e}")
-        
-#         # Close the browser
-#         browser.close()
-        
-        
-#         # Try fallback if no products found
-#         if not products and " " in search_term:
-#             logger.warning(f"No products found for '{search_term}'. Trying simplified search...")
-#             # Try a simpler search term (just first word or two)
-#             simple_term = " ".join(search_term.split()[:2]) 
-#             logger.info(f"Simplified search term to: '{simple_term}'")
-            
-#             # Return to avoid deep recursion, just return empty for now
-#             logger.warning("Fallback search would go here - returning empty list")
-            
-#             # If you want to actually do the fallback search, uncomment this:
-#             # return scrape_zara_search_results(simple_term)
-        
-#         # Transform to our standard format
-#         standardized_products = []
-#         for product in products:
-#             try:
-#                 # Check if product is a dictionary and should have content or is content itself
-#                 if isinstance(product, dict):
-#                     # Some products might have 'content' key, others may not
-#                     if 'content' in product:
-#                         product_data = product['content']
-#                     else:
-#                         product_data = product  # Use the product as is
-#                 else:
-#                     logger.warning(f"Skipping non-dict product: {type(product)}")
-#                     continue
-                
-#                 # Add to standardized products
-#                 standardized_product = create_standardized_product(product_data, search_term)
-#                 if standardized_product:
-#                     standardized_products.append(standardized_product)
-                
-#             except Exception as e:
-#                 logger.error(f"Error standardizing product: {e}")
-#                 logger.error(f"Problem product: {product}")
-#                 # Continue processing other products
-#                 continue
-        
-#         logger.info(f"Returning {len(standardized_products)} standardized products")
-#         return standardized_products
-
-
-# this function is faster by 8 seconds but returns lesser results
 def scrape_zara_search_results(search_term):
     """
     Scrape Zara for products matching the search term.
@@ -537,27 +66,33 @@ def scrape_zara_search_results(search_term):
             ]
         )
         
+        # Enhanced browser context with better anti-detection
         context = browser.new_context(
             viewport={"width": 1366, "height": 768},
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+            locale="en-US",
+            timezone_id="America/New_York",
+            device_scale_factor=2,
+            has_touch=False
         )
         
         # Add extra headers to seem more like a real browser
         context.set_extra_http_headers({
             "Accept-Language": "en-US,en;q=0.9",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
-            "sec-ch-ua": '"Not_A Brand";v="8", "Chromium";v="120"',
-            "sec-ch-ua-platform": '"Windows"',
+            "sec-ch-ua": '"Google Chrome";v="123", "Not;A=Brand";v="8", "Chromium";v="123"',
+            "sec-ch-ua-platform": '"macOS"',
             "sec-ch-ua-mobile": "?0",
             "Sec-Fetch-Dest": "document",
             "Sec-Fetch-Mode": "navigate",
             "Sec-Fetch-Site": "none",
-            "Sec-Fetch-User": "?1"
+            "Sec-Fetch-User": "?1",
+            "Upgrade-Insecure-Requests": "1"
         })
         
         page = context.new_page()
         
-        # Add anti-detection script before navigation
+        # Add enhanced anti-detection script before navigation
         page.evaluate("""() => {
             // Override navigator properties to make detection harder
             Object.defineProperty(navigator, 'webdriver', {
@@ -567,6 +102,10 @@ def scrape_zara_search_results(search_term):
             // Add missing browser properties
             window.chrome = {
                 runtime: {},
+                app: {},
+                loadTimes: function() {},
+                csi: function() {},
+                runtime: {},
             };
             
             // Add language and plugin data
@@ -575,9 +114,30 @@ def scrape_zara_search_results(search_term):
                     {
                         0: {type: "application/x-google-chrome-pdf"},
                         description: "Portable Document Format",
+                        filename: "internal-pdf-viewer",
+                        length: 1,
                         name: "Chrome PDF Plugin"
+                    },
+                    {
+                        0: {type: "application/pdf"},
+                        description: "Portable Document Format",
+                        filename: "internal-pdf-viewer",
+                        length: 1,
+                        name: "Chrome PDF Viewer"
+                    },
+                    {
+                        0: {type: "application/x-nacl"},
+                        description: "Native Client Executable",
+                        filename: "internal-nacl-plugin",
+                        length: 1,
+                        name: "Native Client"
                     }
                 ],
+            });
+            
+            // Add languages
+            Object.defineProperty(navigator, 'languages', {
+                get: () => ['en-US', 'en'],
             });
             
             // Override permissions
@@ -587,6 +147,27 @@ def scrape_zara_search_results(search_term):
                 Promise.resolve({ state: Notification.permission }) :
                 originalQuery(parameters)
             );
+            
+            // Prevent iframe detection
+            Object.defineProperty(navigator, 'maxTouchPoints', {
+                get: () => 5
+            });
+            
+            // Function to override toString to return native code
+            const nativeToStringFunctionString = Function.toString.toString();
+            const functionToString = Function.toString;
+            Object.defineProperty(Function.prototype, 'toString', {
+                configurable: true,
+                writable: true,
+                value: function toString() {
+                    if (this === window.navigator.permissions.query ||
+                        this === functionToString ||
+                        this === window.navigator.webdriver.toString) {
+                        return nativeToStringFunctionString;
+                    }
+                    return functionToString.call(this);
+                }
+            });
         }""")
         
         # Set up network request interception to capture API responses
@@ -612,17 +193,32 @@ def scrape_zara_search_results(search_term):
                 
         page.on("response", handle_response)
         
-        # Navigate to the page with increased timeout
+        # Enhanced navigation with fallback strategies
         logger.info(f"Loading URL: {search_url}")
-        page.goto(search_url, timeout=120000, wait_until="networkidle")
-        logger.info("Page loaded successfully")
+        
+        try:
+            logger.info(f"Attempting navigation with domcontentloaded strategy")
+            page.goto(search_url, timeout=45000, wait_until="domcontentloaded")
+            logger.info("Page loaded with domcontentloaded strategy")
+        except Exception as nav_error:
+            logger.warning(f"domcontentloaded navigation failed: {nav_error}")
+            try:
+                logger.info("Retrying with load strategy")
+                page.goto(search_url, timeout=45000, wait_until="load")
+                logger.info("Page loaded with load strategy")
+            except Exception as nav_error2:
+                logger.warning(f"load navigation failed: {nav_error2}")
+                # Final attempt with no wait condition
+                logger.info("Making final navigation attempt with no wait condition")
+                page.goto(search_url, timeout=30000)
+                logger.info("Page navigation completed")
         
         # Add random wait time to simulate human behavior
-        time.sleep(0.24 + random.random() * 1.1)
+        time.sleep(random.random() * 1.1)
         
         # Simulate mouse movement
         page.mouse.move(100 + random.randint(0, 200), 100 + random.randint(0, 100))
-        time.sleep(0.3 + random.random())
+        time.sleep(random.random())
         
         
         # Handle cookies - be more aggressive with the selector
@@ -683,7 +279,7 @@ def scrape_zara_search_results(search_term):
         except Exception as e:
             logger.warning(f"Cookie handling error: {e}")
         
-        # Wait for the page to load completely
+        # Wait for the page to load completely with more flexible error handling
         logger.info("Waiting for content to load...")
         try:
             # Wait for a product link to appear
@@ -691,7 +287,8 @@ def scrape_zara_search_results(search_term):
             logger.info("Product links detected on page")
         except Exception as wait_error:
             logger.warning(f"Timeout waiting for product links: {str(wait_error)}")
-        
+            # Continue execution even if we don't see product links yet
+            
         # Scroll down gradually to trigger lazy loading
         logger.info("Scrolling to trigger lazy loading...")
         for i in range(8):
@@ -700,14 +297,14 @@ def scrape_zara_search_results(search_term):
             page.evaluate(f"window.scrollBy(0, {scroll_amount})")
             
             # Random wait between scrolls
-            time.sleep(0.1 + random.random() * 1.1)
+            time.sleep(random.random() * 1.1)
             
             # Occasionally move the mouse while scrolling to look more human
             if random.random() > 0.6:
                 page.mouse.move(random.randint(100, 800), random.randint(200, 600))
         
         # Wait a moment after scrolling
-        time.sleep(1.2)
+        time.sleep(0.13)
         
         # Initialize products list
         products = []
@@ -811,11 +408,8 @@ def scrape_zara_search_results(search_term):
             simple_term = " ".join(search_term.split()[:2]) 
             logger.info(f"Simplified search term to: '{simple_term}'")
             
-            # Return to avoid deep recursion, just return empty for now
-            logger.warning("Fallback search would go here - returning empty list")
-            
-            # If you want to actually do the fallback search, uncomment this:
-            # return scrape_zara_search_results(simple_term)
+            # Actually do the fallback search with the simplified term
+            return scrape_zara_search_results(simple_term)
         
         # Transform to our standard format
         standardized_products = []
