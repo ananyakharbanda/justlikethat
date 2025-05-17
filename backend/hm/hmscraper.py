@@ -48,9 +48,6 @@ def scrape_hm_search_results(search_term):
     Returns:
         A list of product dictionaries
     """
-    lstsearch = search_term.strip().split(' ')
-    search_term = lstsearch[0] + ' ' + lstsearch[2] + ' ' + lstsearch[-1]
-    print(search_term)
     # Create the search URL - using US site
     search_url = f"https://www2.hm.com/en_us/search-results.html?q={search_term.replace(' ', '%20')}"
     logger.info(f"Scraping H&M with URL: {search_url}")

@@ -553,6 +553,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const colors = new Set();
     const lengths = new Set();
     const retailers = new Set();
+    const clothingTypes = new Set();
 
     products.forEach((product) => {
       // Track retailers for filtering
@@ -567,24 +568,46 @@ document.addEventListener('DOMContentLoaded', function () {
         if (product.attributes.length) {
           lengths.add(product.attributes.length.toLowerCase());
         }
+        // Track clothing types
+        if (product.attributes.clothing_type) {
+          clothingTypes.add(product.attributes.clothing_type.toLowerCase());
+        }
       }
     });
+    // Check if there are skirts or dresses in the product collection
+    const hasSkirtsOrDresses = Array.from(clothingTypes).some(
+      (type) => type.includes('skirt') || type.includes('dress')
+    );
 
     // Add retailer filters
     if (retailers.size > 0) {
       retailers.forEach((retailer) => {
-        addFilter(retailer.charAt(0).toUpperCase() + retailer.slice(1));
+        const capitalizedRetailer =
+          retailer.charAt(0).toUpperCase() + retailer.slice(1);
+        addFilter(capitalizedRetailer);
       });
     }
 
-    // Add length filters (mini, midi, maxi)
-    ['mini', 'midi', 'maxi'].forEach((length) => {
-      if (lengths.has(length)) {
-        addFilter(length.charAt(0).toUpperCase() + length.slice(1));
-      }
-    });
+    // Only add length filters if there are skirts or dresses
+    if (hasSkirtsOrDresses) {
+      ['mini', 'midi', 'maxi'].forEach((length) => {
+        if (lengths.has(length)) {
+          const capitalizedLength =
+            length.charAt(0).toUpperCase() + length.slice(1);
+          addFilter(capitalizedLength);
+        }
+      });
+    }
+    // // Add length filters (mini, midi, maxi)
+    // ['mini', 'midi', 'maxi'].forEach((length) => {
+    //   if (lengths.has(length)) {
+    //     const capitalizedLength =
+    //       length.charAt(0).toUpperCase() + length.slice(1);
+    //     addFilter(capitalizedLength);
+    //   }
+    // });
 
-    // Add color filters (black + others)
+    // Add color filters
     if (colors.has('black')) {
       addFilter('Black');
     }
@@ -595,6 +618,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  //
   function addFilter(text, isActive = false) {
     const button = document.createElement('button');
     button.className = 'filter-button' + (isActive ? ' active' : '');
@@ -619,19 +643,29 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // Filter by retailer (Zara, H&M)
-        if (filterValue === 'zara' || filterValue === 'hm') {
-          // Method 1: Check the data-retailer attribute (most reliable)
-          if (card.getAttribute('data-retailer') === filterValue) {
+        if (
+          filterValue === 'zara' ||
+          filterValue === 'h&m' ||
+          filterValue === 'hm'
+        ) {
+          // Since we don't have data-retailer attributes, look for the retailer text in the card
+          const retailerDiv = card.querySelector(
+            'div[style*="position: absolute"]'
+          );
+          const retailerText = retailerDiv
+            ? retailerDiv.textContent.trim().toLowerCase()
+            : '';
+
+          // Handle 'h&m' vs 'hm' check
+          if (
+            (filterValue === 'h&m' || filterValue === 'hm') &&
+            (retailerText === 'h&m' || retailerText === 'hm')
+          ) {
             card.style.display = 'block';
-          }
-          // Method 2: Check if the retailer-tag element has the retailer as a class
-          else {
-            const retailerTag = card.querySelector('.retailer-tag');
-            if (retailerTag && retailerTag.classList.contains(filterValue)) {
-              card.style.display = 'block';
-            } else {
-              card.style.display = 'none';
-            }
+          } else if (retailerText === filterValue) {
+            card.style.display = 'block';
+          } else {
+            card.style.display = 'none';
           }
           return;
         }

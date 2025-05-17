@@ -101,8 +101,9 @@ def analyze_clothing_image(image_path):
     6. Pattern (e.g., solid, striped, floral)
     7. Occasion type (e.g., casual, formal, business)
     8. Fit type (e.g., slim, regular, oversized)
-    9. Search String is a short search string based on the characteristics identified which I would use to search on marketplaces like Zara, Amazon etc
-    
+    9. Search String is a 5 word search string based on the characteristics identified which I would use to search on marketplaces like Zara, Amazon etc
+    10. A shorter search String of about 3 words based on the characteristics identified which I would use to search on marketplaces like Zara, Amazon etc
+
     Return only a JSON string with this structure, without markdown formatting.:
     {
         "clothing_type": "string",
@@ -113,8 +114,9 @@ def analyze_clothing_image(image_path):
             "material": "string",
             "pattern": "string",
             "occasion": "string",
-            "fit": "string"
-            "search_string": "string"
+            "fit": "string",
+            "zara_search_string": "string",
+            "hm_search_string": "string"
         }
     }
     """
@@ -174,21 +176,44 @@ def scrape_multiple_retailers(clothing_data):
     Returns:
         Dictionary with combined results from all scrapers
     """
+    # Get the search queries for display in the UI
+    zara_search_string = clothing_data.get("attributes", {}).get("zara_search_string", "")
+    hm_search_string = clothing_data.get("attributes", {}).get("hm_search_string", "")
+    
+    # Use the longer search string as the general query for display purposes
+    display_query = zara_search_string if len(zara_search_string) >= len(hm_search_string) else hm_search_string
+    
     all_results = {
         "status": True,
-        "query": clothing_data.get("attributes", {}).get("search_string", ""),
+        "query": display_query,
         "items": []
     }
+    print(all_results)
     
     headers = {"Content-Type": "application/json"}
     
-    # Function to scrape a single retailer
+    # Function to scrape a single retailer with the appropriate search string
     def scrape_retailer(url, retailer_name):
         try:
+            # Create a copy of the clothing data to modify for each retailer
+            retailer_specific_data = clothing_data.copy()
+            
+            # Make sure attributes are present
+            if "attributes" not in retailer_specific_data:
+                retailer_specific_data["attributes"] = {}
+            
+            # Add a generic search_string that each scraper will use based on the retailer
+            if retailer_name == "zara":
+                retailer_specific_data["attributes"]["search_string"] = retailer_specific_data.get("attributes", {}).get("zara_search_string", "")
+                logger.info(f"Using Zara search string: {retailer_specific_data['attributes']['search_string']}")
+            elif retailer_name == "hm":
+                retailer_specific_data["attributes"]["search_string"] = retailer_specific_data.get("attributes", {}).get("hm_search_string", "")
+                logger.info(f"Using H&M search string: {retailer_specific_data['attributes']['search_string']}")
+            
             response = requests.post(
                 url, 
                 headers=headers, 
-                json=clothing_data,
+                json=retailer_specific_data,
                 timeout=300
             )
             
@@ -273,7 +298,7 @@ def upload_and_find_fashion():
             clothing_data = analyze_clothing_image(file_path)
             os.remove(file_path)
             
-            #print(str(clothing_data))
+            # print(str(clothing_data))
             if not clothing_data["status"]:
                 logger.error("Failed to analyze image")
                 # Delete the file on error
